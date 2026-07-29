@@ -33,3 +33,7 @@ Thumbs.db
 # Tasks / Temp
 tasks/
 *.output
+
+# Node (SJTU-Activity-Hub)
+node_modules/
+.vite/
