@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}{{ report.title }} - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-8 py-8">
+    <!-- 返回 + 删除 -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <a href="/reports" class="text-gray-500 hover:text-gray-300 transition"><i class="fa-solid fa-arrow-left"></i></a>
+            <h2 class="text-2xl font-bold">{{ report.title }}</h2>
+        </div>
+        <a href="/reports/{{ report.id }}/delete"
+           onclick="return confirm('确定删除这份报告吗？')"
+           class="px-3 py-1.5 rounded-lg text-xs font-medium text-rose-400 hover:bg-rose-500/10 transition border border-rose-500/20">
+            <i class="fa-solid fa-trash mr-1"></i>删除
+        </a>
+    </div>
+
+    {% set c = report.content or {} %}
+
+    <!-- 报告元信息 -->
+    <div class="card p-5 mb-4">
+        <div class="flex items-center gap-4 flex-wrap">
+            <div class="flex items-center gap-2 text-sm text-gray-400">
+                <i class="fa-solid fa-calendar"></i>
+                <span>{{ report.period_start.strftime('%Y.%m.%d') if report.period_start else '' }} — {{ report.period_end.strftime('%Y.%m.%d') if report.period_end else '' }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-400">
+                <i class="fa-solid fa-clock"></i>
+                <span>生成于 {{ report.generated_at.strftime('%Y年%m月%d日 %H:%M') if report.generated_at else '' }}</span>
+            </div>
+            {% if c.engine == 'deepseek' %}
+            <span class="tag bg-green-500/20 text-green-400"><i class="fa-solid fa-brain mr-1"></i>DeepSeek 深度分析</span>
+            {% else %}
+            <span class="tag bg-amber-500/20 text-amber-400"><i class="fa-solid fa-gear mr-1"></i>规则引擎</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 核心摘要 -->
+    {% if c.summary %}
+    <div class="card p-6 mb-4 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 border-indigo-500/20">
+        <div class="flex items-start gap-3">
+            <span class="text-2xl">✨</span>
+            <div>
+                <h3 class="font-semibold text-white mb-2">总体概览</h3>
+                <p class="text-gray-300 leading-relaxed">{{ c.summary }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 情绪趋势 + 能力成长 双栏 -->
+    <div class="grid grid-cols-2 gap-4 mb-4">
+        {% if c.emotional_trend %}
+        <div class="card p-5">
+            <h4 class="text-sm font-semibold text-gray-300 mb-3">📈 情绪趋势</h4>
+            {% if c.emotional_trend.description %}
+            <p class="text-sm text-gray-400 mb-3">{{ c.emotional_trend.description }}</p>
+            {% endif %}
+            {% set pos = c.emotional_trend.get('positive_pct', c.emotional_trend.get('positive', 0)) %}
+            {% set neg = c.emotional_trend.get('negative_pct', c.emotional_trend.get('negative', 0)) %}
+            <div class="flex h-2 rounded-full overflow-hidden bg-white/10 mb-2">
+                <div class="bg-emerald-500" style="width:{{ pos }}%"></div>
+                <div class="bg-gray-600" style="width:{{ 100 - pos - neg }}%"></div>
+                <div class="bg-rose-500" style="width:{{ neg }}%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500">
+                <span class="text-emerald-400">😊 {{ pos }}%</span>
+                <span>😐</span>
+                <span class="text-rose-400">😔 {{ neg }}%</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if c.ability_growth %}
+        <div class="card p-5">
+            <h4 class="text-sm font-semibold text-gray-300 mb-3">💪 能力成长</h4>
+            <div class="space-y-2">
+                {% set labels = {'tech': '技术能力', 'creative': '创造力', 'social': '社交力', 'self_awareness': '自我认知'} %}
+                {% for key, val in c.ability_growth.items() %}
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400 w-16">{{ labels.get(key, key) }}</span>
+                    <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" style="width:{{ val }}%"></div>
+                    </div>
+                    <span class="text-xs text-gray-500 w-8 text-right">{{ val }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 兴趣变化 -->
+    {% if c.interest_changes %}
+    <div class="card p-5 mb-4">
+        <h4 class="text-sm font-semibold text-gray-300 mb-3">🎯 兴趣领域变化</h4>
+        <div class="space-y-3">
+            {% for item in c.interest_changes %}
+            <div class="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-gray-200 font-medium">{{ item.field }}</span>
+                    {% if item.trend %}
+                    <span class="tag text-xs
+                        {% if item.trend == '上升' %}bg-emerald-500/20 text-emerald-400
+                        {% elif item.trend == '下降' %}bg-rose-500/20 text-rose-400
+                        {% else %}bg-gray-500/20 text-gray-400{% endif %}
+                    ">{{ item.trend }}</span>
+                    {% endif %}
+                </div>
+                {% if item.count %}
+                <span class="text-xs text-gray-500">{{ item.count }}条相关记录</span>
+                {% endif %}
+            </div>
+            {% if item.detail %}
+            <p class="text-xs text-gray-500 -mt-2 ml-2">{{ item.detail }}</p>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 关键事件分析 -->
+    {% if c.key_events_analysis or c.key_events %}
+    <div class="card p-5 mb-4">
+        <h4 class="text-sm font-semibold text-gray-300 mb-3">🔑 关键事件</h4>
+        <div class="space-y-2">
+            {% for event in (c.key_events_analysis or c.key_events) %}
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                <span class="text-lg flex-shrink-0">
+                    {% if event.type == 'project' %}📁{% elif event.type == 'competition' %}🏆
+                    {% elif event.type == 'study' %}📖{% elif event.type == 'decision' %}🧭
+                    {% elif event.type == 'turning_point' %}🔀{% elif event.type == 'achievement' %}🌟
+                    {% elif event.type == 'failure' %}💪{% elif event.type == 'relationship' %}💞
+                    {% else %}📌{% endif %}
+                </span>
+                <div>
+                    <p class="text-sm text-gray-200">{{ event.title }}</p>
+                    {% if event.significance %}
+                    <p class="text-xs text-gray-500 mt-1">{{ event.significance }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 人格变化 -->
+    {% if c.personality_changes %}
+    <div class="card p-5 mb-4">
+        <h4 class="text-sm font-semibold text-gray-300 mb-2">🧬 人格变化</h4>
+        <p class="text-sm text-gray-300 leading-relaxed">{{ c.personality_changes }}</p>
+    </div>
+    {% endif %}
+
+    <!-- 差距分析 + 建议 -->
+    <div class="grid grid-cols-2 gap-4 mb-4">
+        {% if c.gap_analysis %}
+        <div class="card p-5">
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">🔍 差距分析</h4>
+            <p class="text-sm text-gray-400 leading-relaxed">{{ c.gap_analysis }}</p>
+        </div>
+        {% endif %}
+
+        {% if c.recommendation %}
+        <div class="card p-5">
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">💡 行动建议</h4>
+            {% if c.recommendation is string %}
+            <p class="text-sm text-gray-400 leading-relaxed whitespace-pre-wrap">{{ c.recommendation }}</p>
+            {% else %}
+            <div class="space-y-2">
+                {% for item in c.recommendation %}
+                <div class="flex items-start gap-2">
+                    <span class="text-indigo-400 text-xs mt-0.5">{{ loop.index }}.</span>
+                    <span class="text-sm text-gray-400">{{ item }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 鼓励 -->
+    {% if c.encouragement %}
+    <div class="card p-6 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 border-emerald-500/10">
+        <div class="flex items-start gap-3">
+            <span class="text-2xl">💚</span>
+            <div>
+                <h4 class="font-semibold text-emerald-400 mb-2">写给现在的你</h4>
+                <p class="text-gray-300 leading-relaxed">{{ c.encouragement }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

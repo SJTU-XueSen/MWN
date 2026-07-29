@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Environment
+.env
+!.env.example
+
+# Database & Data
+data/
+*.db
+*.sqlite3
+
+# ChromaDB
+chroma_data/
+.chroma/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tasks / Temp
+tasks/
+*.output

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}人生地图 - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-8 py-8">
+    <!-- 页头 -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-bold">人生地图</h2>
+            <p class="text-gray-400 text-sm mt-1">记录你人生中的重要事件，AI 会帮你发现成长轨迹</p>
+        </div>
+        <a href="/events/new" class="btn-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold no-underline">
+            <i class="fa-solid fa-plus mr-2"></i>记录事件
+        </a>
+    </div>
+
+    <!-- 统计条 -->
+    <div class="card p-4 mb-6 flex items-center gap-6">
+        <div class="flex items-center gap-2">
+            <span class="text-lg">📊</span>
+            <span class="text-sm text-gray-300">共 <strong class="text-white">{{ total }}</strong> 个人生事件</span>
+        </div>
+        {% if type_counts %}
+        <div class="flex items-center gap-1.5 flex-wrap">
+            {% for etype, count in type_counts.items() %}
+            {% set cfg = event_type_config.get(etype, {}) %}
+            <span class="tag bg-white/5 text-gray-400">{{ cfg.icon }} {{ cfg.label }} ×{{ count }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if events %}
+    <!-- 时间线 -->
+    <div class="relative">
+        <!-- 中心线 -->
+        <div class="absolute left-5 top-0 bottom-0 w-0.5 bg-white/8 ml-[1px]"></div>
+
+        <div class="space-y-0">
+            {% set ns = namespace(current_period='') %}
+            {% for event in events %}
+            {% set cfg = event_type_config.get(event.event_type.value if event.event_type else '', {"icon":"📌","label":"事件","color":"gray"}) %}
+            {% set period = event.occurred_at.strftime('%Y年%m月') if event.occurred_at else '未知' %}
+
+            <!-- 月份分隔 -->
+            {% if period != ns.current_period %}
+            {% set ns.current_period = period %}
+            <div class="flex items-center gap-4 py-3 first:pt-0">
+                <div class="w-10 flex-shrink-0 flex justify-center relative z-10">
+                    <div class="w-3 h-3 rounded-full bg-indigo-500 border-2 border-[#0F0F23]"></div>
+                </div>
+                <h3 class="text-base font-bold text-gray-300">{{ period }}</h3>
+            </div>
+            {% endif %}
+
+            <!-- 事件卡片 -->
+            <a href="/events/{{ event.id }}" class="flex items-start gap-4 py-2.5 group no-underline">
+                <div class="w-10 flex-shrink-0 flex justify-center relative z-10 pt-0.5">
+                    <span class="text-lg">{{ cfg.icon }}</span>
+                </div>
+                <div class="flex-1 card p-4 group-hover:border-white/20 transition-all min-w-0">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-semibold text-gray-200 group-hover:text-white transition truncate">
+                                {{ event.title }}
+                            </h4>
+                            {% if event.description %}
+                            <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ event.description[:150] }}{% if event.description|length > 150 %}...{% endif %}</p>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            {% if event.emotion %}
+                            <span class="text-sm">
+                                {% if event.emotion.value == 'positive' %}😊
+                                {% elif event.emotion.value == 'negative' %}😔
+                                {% else %}😐{% endif %}
+                            </span>
+                            {% endif %}
+                            <i class="fa-solid fa-chevron-right text-gray-600 group-hover:text-gray-400 transition text-xs"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2 flex-wrap">
+                        <span class="tag
+                            {% if event.event_type.value in ('project','competition','achievement') %}bg-indigo-500/20 text-indigo-400
+                            {% elif event.event_type.value in ('study','habit') %}bg-emerald-500/20 text-emerald-400
+                            {% elif event.event_type.value in ('social','relationship') %}bg-amber-500/20 text-amber-400
+                            {% elif event.event_type.value in ('decision','turning_point') %}bg-purple-500/20 text-purple-400
+                            {% elif event.event_type.value in ('failure','emotion') %}bg-rose-500/20 text-rose-400
+                            {% else %}bg-gray-500/20 text-gray-400{% endif %}
+                        ">{{ cfg.label }}</span>
+                        {% if event.interest_tags %}
+                        {% for tag in event.interest_tags[:3] %}
+                        <span class="tag bg-emerald-500/20 text-emerald-400">{{ tag }}</span>
+                        {% endfor %}
+                        {% endif %}
+                        <span class="text-xs text-gray-600">{{ event.occurred_at.strftime('%m月%d日') if event.occurred_at else '' }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% else %}
+    <!-- 空状态 -->
+    <div class="card p-16 text-center">
+        <div class="text-6xl mb-5">🗺️</div>
+        <h3 class="text-xl font-semibold text-gray-300 mb-2">这里是你的人生地图</h3>
+        <p class="text-sm text-gray-500 mb-2">记录重要的项目、比赛、决定、转折点……</p>
+        <p class="text-sm text-gray-500 mb-8">每一次记录，都是人生轨迹上的一个标记</p>
+        <div class="flex justify-center gap-4">
+            <a href="/events/new" class="btn-primary text-white px-6 py-2.5 rounded-xl text-sm font-semibold no-underline inline-block">
+                <i class="fa-solid fa-plus mr-2"></i>记录第一个事件
+            </a>
+            <a href="/journal/new" class="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-gray-200 transition border border-white/10 no-underline inline-block">
+                <i class="fa-solid fa-pen mr-2"></i>写日常记录
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 底部快捷入口 -->
+    <div class="mt-6 flex items-center gap-3 text-sm text-gray-500">
+        <span>快速跳转：</span>
+        <a href="/journal" class="text-indigo-400 hover:underline">📝 日常记录</a>
+        <span>·</span>
+        <a href="/persona" class="text-indigo-400 hover:underline">🧬 数字人格</a>
+    </div>
+</div>
+{% endblock %}

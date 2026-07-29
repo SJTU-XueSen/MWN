@@ -1,0 +1,91 @@
+{% extends "guest_base.html" %}
+{% block title %}隐私政策 - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="glass rounded-2xl p-8 max-w-3xl w-full my-8">
+    <h1 class="text-2xl font-bold mb-2">隐私政策</h1>
+    <p class="text-gray-400 text-sm mb-8">最后更新：2026年7月29日</p>
+
+    <div class="prose prose-invert max-w-none text-gray-300 space-y-6 text-sm leading-relaxed">
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">1. 我们收集什么数据</h2>
+
+        <h3 class="text-base font-medium text-gray-200 mt-4">1.1 您主动提供的数据</h3>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>账户信息：用户名、邮箱、密码（加密存储）</li>
+            <li>个人资料：年龄、学校、专业、年级、个人简介</li>
+            <li>人生记录：日常日记、人生事件、兴趣偏好、目标设定</li>
+            <li>对话内容：与AI未来人格的聊天记录</li>
+        </ul>
+
+        <h3 class="text-base font-medium text-gray-200 mt-4">1.2 系统自动收集的数据</h3>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>使用日志：访问时间、页面浏览、功能使用频率</li>
+            <li>设备信息：浏览器类型、操作系统版本</li>
+            <li>AI分析结果：人格画像、模拟路径、成长报告</li>
+        </ul>
+
+        <h3 class="text-base font-medium text-gray-200 mt-4">1.3 我们不收集的数据</h3>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>精确地理位置</li>
+            <li>通讯录或社交关系</li>
+            <li>身份证号或敏感证件信息</li>
+            <li>银行账户或支付信息（MVP阶段不涉及支付）</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">2. 数据如何使用</h2>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>生成和维护您的数字人格画像</li>
+            <li>运行人生模拟引擎，生成未来路径</li>
+            <li>改进AI模型的分析准确度</li>
+            <li>提供个性化的成长建议和反馈</li>
+            <li>发送服务相关通知（如人格更新提醒）</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">3. 数据存储与安全</h2>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>密码使用bcrypt哈希存储，不可逆</li>
+            <li>数据库采用访问控制，仅授权服务可读写</li>
+            <li>文本数据使用Embedding技术处理后存入向量数据库</li>
+            <li>定期进行数据备份，防止数据丢失</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">4. 数据共享</h2>
+        <p>我们<strong>不会</strong>在以下情况之外共享您的个人数据：</p>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>获得您的明确授权</li>
+            <li>法律法规要求披露</li>
+            <li>保护本平台或他人的合法权益</li>
+        </ul>
+        <p>我们可能共享匿名的、聚合的统计数据用于研究或产品改进，此类数据无法识别个人身份。</p>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">5. 您的权利</h2>
+        <ul class="list-disc pl-5 space-y-1">
+            <li><strong>访问权：</strong>您可以随时查看我们存储的关于您的所有数据</li>
+            <li><strong>修改权：</strong>您可以更正不准确的个人信息</li>
+            <li><strong>删除权：</strong>您可以要求删除全部或部分数据</li>
+            <li><strong>导出权：</strong>您可以导出您的数据副本</li>
+            <li><strong>撤销同意：</strong>您可以随时撤销对数据处理的同意</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">6. Cookie 使用</h2>
+        <p>我们使用必要的Session Cookie来维持您的登录状态。不使用跟踪Cookie或第三方广告Cookie。</p>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">7. 未成年人保护</h2>
+        <p>本平台面向在校大学生及研究生。如您非在读大学生，请勿注册使用。</p>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">8. 政策变更</h2>
+        <p>我们可能不时更新本隐私政策。重大变更将提前通知。</p>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">9. 联系方式</h2>
+        <p>如有隐私相关问题，请联系：privacy@ailifemirror.com</p>
+
+    </div>
+
+    {% if user %}
+    <p class="text-center mt-4 text-sm text-gray-500">
+        <a href="/" class="text-indigo-400 hover:underline">← 返回首页</a>
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

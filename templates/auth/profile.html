@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}个人资料 - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h2 class="text-2xl font-bold mb-6">个人资料</h2>
+
+    {% if success %}
+    <div class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 py-3 rounded-xl text-sm mb-4">
+        <i class="fa-solid fa-check-circle mr-2"></i>{{ success }}
+    </div>
+    {% endif %}
+
+    <div class="glass rounded-2xl p-6">
+        <form method="POST" action="/auth/profile" data-no-loading>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">学校</label>
+                    <input type="text" name="university" class="input-field" value="{{ profile.university or '' }}" placeholder="如：清华大学">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">专业</label>
+                    <input type="text" name="major" class="input-field" value="{{ profile.major or '' }}" placeholder="如：计算机科学">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">年级</label>
+                    <input type="text" name="grade" class="input-field" value="{{ profile.grade or '' }}" placeholder="如：大三">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">年龄</label>
+                    <input type="number" name="age" class="input-field" value="{{ profile.age or '' }}" placeholder="如：21">
+                </div>
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm text-gray-400 mb-2">个人简介</label>
+                <textarea name="bio" class="input-field" rows="3" placeholder="介绍一下自己...">{{ profile.bio or '' }}</textarea>
+            </div>
+            <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-white font-semibold text-sm">
+                保存修改
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}首页 - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-8 py-8">
+    <!-- 欢迎区 -->
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold">你好，{{ user.username }}</h2>
+        {% if persona %}
+        <p class="text-gray-400 mt-1">
+            根据 {{ stats.records }} 条记录，
+            你正在成为 <span class="text-indigo-400 font-semibold">{{ persona.persona_type or '探索中的自己' }}</span>
+        </p>
+        {% else %}
+        <p class="text-gray-400 mt-1">欢迎回到你的AI人生镜像。开始记录你的第一段经历吧。</p>
+        {% endif %}
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="grid grid-cols-6 gap-4 mb-8">
+        <div class="card p-4 text-center">
+            <div class="text-2xl font-bold text-white">{{ stats.events }}</div>
+            <div class="text-xs text-gray-500 mt-1">人生事件</div>
+        </div>
+        <div class="card p-4 text-center">
+            <div class="text-2xl font-bold text-white">{{ stats.records }}</div>
+            <div class="text-xs text-gray-500 mt-1">日常记录</div>
+        </div>
+        <div class="card p-4 text-center">
+            <div class="text-2xl font-bold text-white">{{ stats.reports }}</div>
+            <div class="text-xs text-gray-500 mt-1">成长报告</div>
+        </div>
+        <div class="card p-4 text-center">
+            <div class="text-2xl font-bold text-white">{{ stats.goals }}</div>
+            <div class="text-xs text-gray-500 mt-1">活跃目标</div>
+        </div>
+        <div class="card p-4 text-center">
+            <div class="text-2xl font-bold text-white">{{ stats.simulations }}</div>
+            <div class="text-xs text-gray-500 mt-1">人生模拟</div>
+        </div>
+        <div class="card p-4 text-center">
+            <div class="text-2xl font-bold text-white">{{ stats.week_records }}</div>
+            <div class="text-xs text-gray-500 mt-1">本周记录</div>
+        </div>
+    </div>
+
+    <!-- 成长洞察 -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+        <!-- AI 洞察 -->
+        <div class="col-span-2 card p-4 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 border-indigo-500/10">
+            <div class="flex items-start gap-3">
+                <span class="text-xl mt-0.5">🧠</span>
+                <div>
+                    <p class="text-xs text-gray-500 mb-1">AI 成长洞察</p>
+                    <p class="text-sm text-gray-300 leading-relaxed">{{ insight }}</p>
+                </div>
+            </div>
+        </div>
+        <!-- 连续记录 -->
+        <div class="card p-4 text-center">
+            <p class="text-xs text-gray-500 mb-1">连续记录</p>
+            <p class="text-2xl font-bold {% if stats.streak >= 7 %}text-emerald-400{% elif stats.streak >= 3 %}text-amber-400{% else %}text-gray-400{% endif %}">
+                {{ stats.streak }}<span class="text-sm font-normal text-gray-500"> 天</span>
+            </p>
+            {% if stats.streak >= 7 %}<p class="text-xs text-emerald-500 mt-1">🔥 保持得很棒</p>{% endif %}
+        </div>
+        <!-- 本周对比 -->
+        <div class="card p-4 text-center">
+            <p class="text-xs text-gray-500 mb-1">本周 vs 上周</p>
+            <p class="text-2xl font-bold text-white">
+                {{ stats.week_records }}<span class="text-sm font-normal text-gray-500"> 条</span>
+            </p>
+            {% if stats.week_change > 0 %}
+            <p class="text-xs text-emerald-400 mt-1">↑ 比上周多 {{ stats.week_change }} 条</p>
+            {% elif stats.week_change < 0 %}
+            <p class="text-xs text-rose-400 mt-1">↓ 比上周少 {{ stats.week_change|abs }} 条</p>
+            {% else %}
+            <p class="text-xs text-gray-500 mt-1">→ 持平</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-6">
+        <!-- 左栏：快速操作 + 最近事件 -->
+        <div class="col-span-2 space-y-6">
+            <!-- 快速操作 -->
+            <div class="card p-5">
+                <h3 class="font-semibold text-sm text-gray-400 uppercase tracking-wider mb-4">快速开始</h3>
+                <div class="grid grid-cols-4 gap-3">
+                    <a href="/journal/new" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition no-underline">
+                        <i class="fa-solid fa-pen-to-square text-lg text-indigo-400"></i>
+                        <span class="text-xs text-gray-300">写日常记录</span>
+                    </a>
+                    <a href="/events/new" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition no-underline">
+                        <i class="fa-solid fa-plus text-lg text-amber-400"></i>
+                        <span class="text-xs text-gray-300">记录事件</span>
+                    </a>
+                    <a href="/future-chat" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition no-underline">
+                        <i class="fa-solid fa-comment-dots text-lg text-emerald-400"></i>
+                        <span class="text-xs text-gray-300">未来对话</span>
+                    </a>
+                    <a href="/simulation" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition no-underline">
+                        <i class="fa-solid fa-flask text-lg text-purple-400"></i>
+                        <span class="text-xs text-gray-300">人生模拟</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 最近事件 -->
+            <div class="card p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-sm text-gray-400 uppercase tracking-wider">最近人生事件</h3>
+                    <a href="/events" class="text-xs text-indigo-400 hover:underline">查看全部 →</a>
+                </div>
+                {% if recent_events %}
+                <div class="space-y-3">
+                    {% for event in recent_events %}
+                    <a href="/events/{{ event.id }}" class="flex items-start gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition no-underline">
+                        <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
+                            {% if event.event_type.value == 'project' %}📁
+                            {% elif event.event_type.value == 'competition' %}🏆
+                            {% elif event.event_type.value == 'study' %}📖
+                            {% elif event.event_type.value == 'social' %}👥
+                            {% elif event.event_type.value == 'decision' %}🧭
+                            {% elif event.event_type.value == 'turning_point' %}🔀
+                            {% elif event.event_type.value == 'habit' %}🔄
+                            {% elif event.event_type.value == 'failure' %}💪
+                            {% elif event.event_type.value == 'achievement' %}🌟
+                            {% elif event.event_type.value == 'relationship' %}💞
+                            {% elif event.event_type.value == 'emotion' %}💭
+                            {% else %}📌{% endif %}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-200 truncate">{{ event.title }}</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="tag
+                                    {% if event.event_type.value in ('project','competition','achievement') %}bg-indigo-500/20 text-indigo-400
+                                    {% elif event.event_type.value in ('study','habit') %}bg-emerald-500/20 text-emerald-400
+                                    {% elif event.event_type.value in ('social','relationship') %}bg-amber-500/20 text-amber-400
+                                    {% elif event.event_type.value in ('decision','turning_point') %}bg-purple-500/20 text-purple-400
+                                    {% elif event.event_type.value in ('failure','emotion') %}bg-rose-500/20 text-rose-400
+                                    {% else %}bg-gray-500/20 text-gray-400{% endif %}
+                                ">{{ event.event_type.value }}</span>
+                                <span class="text-xs text-gray-500">
+                                    {% if event.emotion and event.emotion.value == 'positive' %}😊
+                                    {% elif event.emotion and event.emotion.value == 'negative' %}😔
+                                    {% else %}😐{% endif %}
+                                </span>
+                                <span class="text-xs text-gray-600">{{ event.occurred_at.strftime('%m月%d日') if event.occurred_at else '' }}</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-500 py-8 text-center">还没有人生事件，去<a href="/events" class="text-indigo-400 hover:underline">记录第一段经历</a>吧</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 右栏：人格预览 + 兴趣 + 目标 -->
+        <div class="space-y-6">
+            <!-- 人格 -->
+            <div class="card p-5">
+                <h3 class="font-semibold text-sm text-gray-400 uppercase tracking-wider mb-4">数字人格</h3>
+                {% if persona %}
+                <div class="text-center mb-4">
+                    <div class="text-4xl mb-2">🧬</div>
+                    <div class="text-lg font-bold text-white">{{ persona.persona_type or '探索中' }}</div>
+                    <div class="text-xs text-gray-500 mt-1">置信度 {{ (persona.confidence * 100)|int if persona.confidence else 0 }}% · v{{ persona.version }}</div>
+                </div>
+                {% if persona.ability_profile %}
+                <div class="space-y-2">
+                    {% for key, val in persona.ability_profile.items() %}
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400 w-16">{{ {'tech':'技术能力','creative':'创造力','social':'社交力','self_awareness':'自我认知','expression':'表达','professional':'专业'}.get(key, key) }}</span>
+                        <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" style="width:{{ val }}%"></div>
+                        </div>
+                        <span class="text-xs text-gray-500 w-8 text-right">{{ val }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <a href="/persona" class="block text-center text-xs text-indigo-400 hover:underline mt-4">查看完整画像 →</a>
+                {% else %}
+                <p class="text-sm text-gray-500 py-6 text-center">数据不足，多记录一些人生经历后AI将为你生成数字人格</p>
+                {% endif %}
+            </div>
+
+            <!-- 兴趣分布 -->
+            {% if interests %}
+            <div class="card p-5">
+                <h3 class="font-semibold text-sm text-gray-400 uppercase tracking-wider mb-4">兴趣分布</h3>
+                <div class="space-y-2">
+                    {% for field, score in interests.items() %}
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400 w-16 truncate">{{ field }}</span>
+                        <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style="width:{{ score }}%"></div>
+                        </div>
+                        <span class="text-xs text-gray-500 w-8 text-right">{{ score|int }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 活跃目标 -->
+            <div class="card p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-sm text-gray-400 uppercase tracking-wider">活跃目标</h3>
+                    <a href="/goals" class="text-xs text-indigo-400 hover:underline">管理 →</a>
+                </div>
+                {% if active_goals %}
+                <div class="space-y-2">
+                    {% for goal in active_goals %}
+                    <a href="/goals" class="flex items-center gap-3 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition no-underline">
+                        <span class="text-lg flex-shrink-0">
+                            {% if goal.goal_type == 'career' %}💼
+                            {% elif goal.goal_type == 'study' %}📚
+                            {% elif goal.goal_type == 'skill' %}🔧
+                            {% elif goal.goal_type == 'lifestyle' %}🌱
+                            {% elif goal.goal_type == 'relationship' %}💞
+                            {% else %}🎯{% endif %}
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-gray-200 truncate">{{ goal.title }}</p>
+                            <p class="text-xs text-gray-500">重要度 {{ goal.importance }}%{% if goal.target_year %} · {{ goal.target_year }}年{% endif %}{% if goal.target_period %} · {{ goal.target_period }}{% endif %}</p>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-500 py-4 text-center">
+                    <a href="/goals/new" class="text-indigo-400 hover:underline">设定第一个目标</a>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

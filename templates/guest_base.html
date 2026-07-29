@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI人生镜像{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        body { background: #0F0F23; color: #E2E8F0; }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.06); }
+        .btn-primary { background: linear-gradient(135deg, #6366F1, #8B5CF6); transition: all 0.2s; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(99,102,241,0.4); }
+        .input-field { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #E2E8F0; border-radius: 12px; padding: 12px 16px; width: 100%; outline: none; transition: border 0.2s; }
+        .input-field:focus { border-color: #818CF8; }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+    {% block content %}{% endblock %}
+    <footer class="mt-8 text-center text-xs text-gray-600 space-x-4">
+        <a href="/legal/terms" class="hover:text-gray-400 transition">用户协议</a>
+        <a href="/legal/privacy" class="hover:text-gray-400 transition">隐私政策</a>
+        <a href="/legal/disclaimer" class="hover:text-gray-400 transition">免责声明</a>
+        <span class="text-gray-700">|</span>
+        <span>AI人生镜像 v1.0</span>
+    </footer>
+</body>
+</html>

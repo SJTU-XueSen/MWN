@@ -1,0 +1,69 @@
+{% extends "guest_base.html" %}
+{% block title %}免责声明 - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="glass rounded-2xl p-8 max-w-3xl w-full my-8">
+    <h1 class="text-2xl font-bold mb-2">免责声明</h1>
+    <p class="text-gray-400 text-sm mb-8">最后更新：2026年7月29日</p>
+
+    <div class="prose prose-invert max-w-none text-gray-300 space-y-6 text-sm leading-relaxed">
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">1. AI 分析免责声明</h2>
+        <p>AI人生镜像使用大语言模型技术生成数字人格画像和人生模拟路径。<strong>这些内容不代表客观事实，也不构成专业建议。</strong></p>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>数字人格画像是基于有限数据的统计推断，可能与您的真实人格存在偏差</li>
+            <li>人生模拟路径是对可能性的探索性生成，<strong>绝非对未来结果的预测</strong></li>
+            <li>AI可能生成不准确、不完整或不适用于您个人情况的内容</li>
+            <li>不同时间、不同数据量下生成的AI分析结果可能不同</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">2. 非专业服务声明</h2>
+        <p>本平台<strong>不是</strong>：</p>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>心理咨询服务 — 如您有心理健康方面的困扰，请咨询持证心理咨询师</li>
+            <li>职业规划服务 — 重大职业决策请结合多方信息综合判断</li>
+            <li>教育咨询服务 — 升学、选课等决策请咨询学校辅导员或导师</li>
+            <li>法律服务 — 本平台不提供任何法律建议</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">3. 人格与模拟局限性</h2>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>人格是复杂且动态变化的，任何模型都无法完全捕捉</li>
+            <li>人生受到大量不可预测因素的影响（机遇、环境变化、社会趋势等），模拟无法涵盖所有变量</li>
+            <li>模拟依赖用户提供的数据质量——数据越少，模拟越不可靠</li>
+            <li>系统设计目标是"展示可能性"而非"预测确定性结果"</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">4. 数据准确性</h2>
+        <p>本平台依赖用户提供的个人信息和人生记录。我们不保证用户提供的数据是准确的，也不对因用户提供错误数据而导致的AI分析偏差负责。</p>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">5. 技术免责</h2>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>本平台可能因维护、升级或不可抗力暂时中断服务</li>
+            <li>我们采取合理措施保护数据安全，但不能保证绝对的安全</li>
+            <li>AI模型可能随时更新，导致分析结果与之前版本不同</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">6. 用户责任</h2>
+        <p>您理解并同意：</p>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>使用本平台提供的AI分析内容时，应保持独立思考</li>
+            <li>人生重大决策应综合多方信息，而非单纯依赖本平台输出</li>
+            <li>您对自己基于AI分析内容做出的任何决定承担全部责任</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">7. 第三方链接</h2>
+        <p>本平台可能包含指向第三方网站或服务的链接。我们对这些第三方内容的准确性、合法性不承担任何责任。</p>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">8. 责任限制</h2>
+        <p>在适用法律允许的最大范围内，AI人生镜像及其开发者不对因使用或无法使用本平台而导致的任何直接、间接、附带、特殊、惩罚性或后果性损害承担责任，即使已被告知此类损害的可能性。</p>
+
+    </div>
+
+    {% if user %}
+    <p class="text-center mt-4 text-sm text-gray-500">
+        <a href="/" class="text-indigo-400 hover:underline">← 返回首页</a>
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

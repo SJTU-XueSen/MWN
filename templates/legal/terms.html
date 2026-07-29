@@ -1,0 +1,76 @@
+{% extends "guest_base.html" %}
+{% block title %}用户协议 - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="glass rounded-2xl p-8 max-w-3xl w-full my-8">
+    <h1 class="text-2xl font-bold mb-2">用户协议</h1>
+    <p class="text-gray-400 text-sm mb-8">最后更新：2026年7月29日</p>
+
+    <div class="prose prose-invert max-w-none text-gray-300 space-y-6 text-sm leading-relaxed">
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">1. 服务说明</h2>
+        <p>AI人生镜像（以下简称"本平台"）是一款基于人工智能技术的个人成长辅助工具。本平台通过记录和分析用户自愿提供的人生经历数据，生成数字人格画像和人生模拟路径，帮助用户进行自我认知和成长规划。</p>
+        <p><strong>本平台不提供职业建议、心理诊断或人生决策服务。</strong>所有AI生成的内容仅供用户参考，不应作为人生重大决策的唯一依据。</p>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">2. 用户资格</h2>
+        <p>您确认：</p>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>年满18周岁，为在读大学生或研究生</li>
+            <li>具备完全民事行为能力</li>
+            <li>提供的注册信息真实、准确、完整</li>
+            <li>不会将本平台用于任何非法目的</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">3. 账户管理</h2>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>您对账户下的所有活动负责</li>
+            <li>请妥善保管密码，不得将账户转让或出借给他人</li>
+            <li>如发现账户异常，应立即通知我们</li>
+            <li>我们保留在违反协议时暂停或终止账户的权利</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">4. 数据所有权</h2>
+        <p><strong>您的数据属于您自己。</strong>您拥有对个人数据的查看权、修改权和删除权。本平台不会在未经您明确授权的情况下将您的个人数据共享给第三方。详细说明请参阅隐私政策。</p>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">5. AI 生成内容声明</h2>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>数字人格画像基于您提供的数据由AI生成，可能存在偏差</li>
+            <li>人生模拟路径仅为可能性展示，并非对未来结果的预测或承诺</li>
+            <li>AI生成内容可能包含不准确信息，用户应独立思考判断</li>
+            <li>本平台不对因依赖AI生成内容而做出的任何决策承担责任</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">6. 禁止行为</h2>
+        <p>您不得：</p>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>利用本平台从事违法活动</li>
+            <li>上传包含病毒、恶意代码的内容</li>
+            <li>干扰或破坏本平台的正常运行</li>
+            <li>通过自动化手段批量采集本平台数据</li>
+            <li>冒充他人身份注册或使用本平台</li>
+        </ul>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">7. 免责条款</h2>
+        <p>本平台按"现状"提供服务，不提供任何明示或暗示的保证。我们不保证：</p>
+        <ul class="list-disc pl-5 space-y-1">
+            <li>服务不中断或无错误</li>
+            <li>AI分析结果完全准确或适用于您的具体情况</li>
+            <li>人生模拟路径将在现实中实现</li>
+        </ul>
+        <p>在适用法律允许的最大范围内，本平台不对因使用服务而产生的任何间接、附带、特殊或后果性损害承担责任。</p>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">8. 协议变更</h2>
+        <p>我们可能不时更新本协议。重大变更将通过平台通知或电子邮件告知。继续使用本平台即表示您接受更新后的协议。</p>
+
+        <h2 class="text-lg font-semibold text-white mt-8 mb-3">9. 联系方式</h2>
+        <p>如对本协议有任何疑问，请联系：legal@ailifemirror.com</p>
+
+    </div>
+
+    {% if user %}
+    <p class="text-center mt-4 text-sm text-gray-500">
+        <a href="/" class="text-indigo-400 hover:underline">← 返回首页</a>
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

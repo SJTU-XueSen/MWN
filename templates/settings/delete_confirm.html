@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}删除账户 - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-8 py-16">
+    <div class="card p-8 text-center bg-rose-500/5 border-rose-500/20">
+        <div class="text-5xl mb-4">⚠️</div>
+        <h2 class="text-xl font-bold text-white mb-2">确认删除账户</h2>
+        <p class="text-sm text-gray-400 mb-6 leading-relaxed">
+            此操作将<strong class="text-rose-400">永久删除</strong>你的账户及所有关联数据，包括：
+        </p>
+        <ul class="text-sm text-gray-500 text-left space-y-1 mb-6 max-w-xs mx-auto">
+            <li>· 所有日常记录和人生事件</li>
+            <li>· AI 生成的数字人格画像</li>
+            <li>· 长期记忆库（ChromaDB）</li>
+            <li>· 人生模拟和未来人格</li>
+            <li>· 对话记录和成长报告</li>
+            <li>· 目标和兴趣数据</li>
+        </ul>
+        <p class="text-xs text-gray-600 mb-6">建议先 <a href="/settings/export" class="text-indigo-400 hover:underline">导出数据备份</a></p>
+        <div class="flex gap-3 justify-center">
+            <a href="/settings" class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-gray-200 transition border border-white/10">
+                取消
+            </a>
+            <form method="POST" action="/settings/delete-account" class="inline">
+                <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 transition cursor-pointer">
+                    确认删除
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

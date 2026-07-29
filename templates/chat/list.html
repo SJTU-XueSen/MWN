@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}未来对话 - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-8 py-8">
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold">与未来的自己对话</h2>
+        <p class="text-gray-400 text-sm mt-1">选择一个你生成过的未来人格，与ta进行对话</p>
+    </div>
+
+    {% if future_selves %}
+    <div class="space-y-3">
+        {% for fs in future_selves %}
+        <a href="/future-chat/{{ fs.id }}" class="card p-5 block no-underline group">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-4 flex-1 min-w-0">
+                    <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl flex-shrink-0">
+                        {% if '创造' in fs.persona_label %}🔧
+                        {% elif '思考' in fs.persona_label or '真理' in fs.persona_label or '探索' in fs.persona_label %}🔬
+                        {% elif '开拓' in fs.persona_label or '创业' in fs.persona_label %}🚀
+                        {% elif '连接' in fs.persona_label %}🌐
+                        {% else %}🪞{% endif %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold text-white group-hover:text-indigo-400 transition">{{ fs.persona_label }}</h3>
+                        <p class="text-xs text-gray-500 mt-1">
+                            {{ fs.target_year }}年 · 置信度{{ (fs.confidence * 100)|int if fs.confidence else 0 }}%
+                            {% if fs.basis_summary %}
+                            <span class="text-gray-600 ml-2">{{ fs.basis_summary[:60] }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <i class="fa-solid fa-comment-dots text-gray-600 group-hover:text-indigo-400 transition text-lg"></i>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card p-16 text-center">
+        <div class="text-6xl mb-5">💬</div>
+        <h3 class="text-xl font-semibold text-gray-300 mb-2">还没有未来人格</h3>
+        <p class="text-sm text-gray-500 mb-8">先进行一次人生模拟，生成未来人格后就能对话了</p>
+        <a href="/simulation/new" class="btn-primary text-white px-6 py-2.5 rounded-xl text-sm font-semibold no-underline inline-block">
+            开始人生模拟 →
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
