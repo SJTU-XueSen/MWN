@@ -29,7 +29,7 @@
                 <h3 class="font-semibold text-white">
                     {{ SCENARIO_LABELS.get(sim.scenario_type.value if sim.scenario_type else '', sim.scenario_type) }}
                 </h3>
-                {% if sim.question %}
+                {% if sim.question and sim.question|length > 5 %}
                 <p class="text-sm text-gray-400 mt-1">"{{ sim.question }}"</p>
                 {% endif %}
             </div>
@@ -73,7 +73,7 @@
             <!-- 人格维度变化 -->
             {% if path.persona_shift %}
             <div class="mb-4">
-                <p class="text-xs text-gray-500 mb-2">人格特质变化</p>
+                <p class="text-xs text-gray-500 mb-2">人格倾向变化</p>
                 <div class="flex flex-wrap gap-1.5">
                     {% for dim, change in path.persona_shift.items() %}
                     <span class="tag text-xs
@@ -87,10 +87,10 @@
             </div>
             {% endif %}
 
-            <!-- 路径契合度（改名的置信度） -->
+            <!-- 未来人格匹配度（改名的置信度） -->
             <div class="mb-4">
                 <div class="flex items-center justify-between mb-1">
-                    <span class="text-xs text-gray-500">路径契合度</span>
+                    <span class="text-xs text-gray-500">未来人格匹配度</span>
                     <span class="text-xs text-gray-500">{{ (path.confidence * 100)|int if path.confidence else 0 }}%</span>
                 </div>
                 <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -103,10 +103,10 @@
                 <p class="text-xs text-gray-600 mt-1">根据你的长期记忆、兴趣倾向和行为模式生成</p>
             </div>
 
-            <!-- 关键成长节点 -->
+            <!-- 可能出现的人生节点 -->
             {% if path.milestones %}
             <div class="mb-4">
-                <p class="text-xs text-gray-500 mb-2">关键成长节点</p>
+                <p class="text-xs text-gray-500 mb-2">可能出现的人生节点</p>
                 <div class="space-y-2">
                     {% for ms in path.milestones %}
                     <div class="flex items-start gap-2">
@@ -121,7 +121,7 @@
             <!-- 关键转折点（不确定事件） -->
             {% if path.turning_points %}
             <div class="mb-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
-                <p class="text-xs text-amber-400 mb-2">⚡ 可能的转折</p>
+                <p class="text-xs text-amber-400 mb-2">⚡ 可能的成长课题</p>
                 <div class="space-y-1.5">
                     {% for tp in path.turning_points %}
                     <div class="flex items-start gap-2">
@@ -140,6 +140,15 @@
             </div>
             {% endif %}
 
+            <!-- 详细体验按钮 -->
+            {% set fs_list = futures or [] %}
+            {% if fs_list|length > loop.index0 %}
+            <a href="/experience/start/{{ fs_list[loop.index0].id }}"
+               class="block w-full text-center py-2.5 rounded-xl text-sm font-semibold bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 transition no-underline mb-2">
+                <i class="fa-solid fa-gamepad mr-2"></i>详细体验这段人生
+            </a>
+            {% endif %}
+
             <!-- 核心按钮：与未来自己对话 -->
             <a href="/future-chat"
                class="block w-full text-center py-2.5 rounded-xl text-sm font-semibold
@@ -150,26 +159,28 @@
                 <i class="fa-solid fa-comment-dots mr-2"></i>与这个版本的自己对话
             </a>
 
-            <!-- 回到现在——差距分析 -->
+            <!-- 一键设为目标 -->
+            <form method="POST" action="/simulation/{{ sim.id }}/to-goal/{{ loop.index0 }}" class="m-0">
+                <button type="submit"
+                        class="w-full py-2 rounded-xl text-xs font-medium text-emerald-400 hover:text-emerald-300 border border-emerald-500/20 hover:border-emerald-500/40 transition bg-transparent cursor-pointer">
+                    <i class="fa-solid fa-bullseye mr-1"></i>一键设为目标
+                </button>
+            </form>
+
+            <!-- 回到现在——路径专属建议 -->
             <div class="mt-3 p-3 rounded-xl bg-white/5">
-                <p class="text-xs text-gray-500 mb-2">↩ 回到现在</p>
-                <p class="text-xs text-gray-500 leading-relaxed mb-2">距离这个未来，当前需要重点发展的方向：</p>
+                <p class="text-xs text-gray-500 mb-2">↩ 回到现在：90天可以做什么</p>
                 <div class="space-y-1 text-xs text-gray-400">
-                    {% if path.persona_shift %}
-                    {% for dim, change in path.persona_shift.items() %}
-                    {% set val = change|string|replace('+','')|replace('-','')|int %}
-                    {% if val is defined and val >= 10 %}
-                    <div class="flex justify-between">
-                        <span>{{ dim }}</span>
-                        <span class="text-gray-500">还需提升 {{ change }}</span>
+                    {% if path.gap_suggestions %}
+                    {% for s in path.gap_suggestions %}
+                    <div class="flex items-start gap-2">
+                        <span class="text-indigo-400 mt-0.5">{{ loop.index }}.</span>
+                        <span>{{ s }}</span>
                     </div>
-                    {% endif %}
                     {% endfor %}
+                    {% else %}
+                    <span class="text-gray-600">基于当前兴趣在核心领域建立持续的学习习惯</span>
                     {% endif %}
-                </div>
-                <div class="mt-2 pt-2 border-t border-white/5">
-                    <p class="text-xs text-gray-600">未来90天建议：</p>
-                    <p class="text-xs text-gray-500 mt-1">1. 基于当前兴趣完成一个实践项目<br>2. 在核心领域建立持续的学习习惯<br>3. 主动接触该方向的前辈或社群</p>
                 </div>
             </div>
         </div>

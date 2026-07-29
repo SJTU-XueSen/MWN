@@ -68,6 +68,62 @@ async def chat_send(
     return RedirectResponse(url=f"/future-chat/{future_self_id}", status_code=302)
 
 
+# ── 流式发送（SSE）────────────────────────────────────
+
+@router.post("/{future_self_id}/stream")
+async def chat_stream(request: Request, future_self_id: int, db: AsyncSession = Depends(get_db)):
+    if r := _require_login(request): return r
+    uid = request.session["user"]["id"]
+
+    body = await request.json()
+    message = body.get("message", "")
+
+    from services.chat_service import get_future_self, stream_reply
+    from database.models import ChatMessage
+    from datetime import datetime
+
+    future_self = await get_future_self(db, future_self_id)
+    if not future_self or future_self.user_id != uid:
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"error": "not found"}, status_code=404)
+
+    from fastapi.responses import StreamingResponse
+    import json as _json
+
+    async def event_stream():
+        # 1. 保存用户消息
+        user_msg = ChatMessage(
+            user_id=uid, future_self_id=future_self_id,
+            role="user", content=message,
+            created_at=datetime.utcnow(),
+        )
+        db.add(user_msg)
+        await db.commit()
+
+        # 2. 发送用户消息确认
+        yield f"data: {_json.dumps({'type': 'user_saved', 'id': user_msg.id})}\n\n"
+
+        # 3. 流式 AI 回复
+        full_reply = ""
+        async for token in stream_reply(future_self, uid, message):
+            full_reply += token
+            yield f"data: {_json.dumps({'type': 'token', 'text': token})}\n\n"
+
+        # 4. 保存 AI 回复
+        ai_msg = ChatMessage(
+            user_id=uid, future_self_id=future_self_id,
+            role="assistant", content=full_reply,
+            created_at=datetime.utcnow(),
+        )
+        db.add(ai_msg)
+        await db.commit()
+
+        # 5. 完成
+        yield f"data: {_json.dumps({'type': 'done', 'id': ai_msg.id})}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
 # ── 清除对话 ──────────────────────────────────────────
 
 @router.get("/{future_self_id}/clear")

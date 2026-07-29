@@ -49,6 +49,16 @@ async def _collect_user_data(db: AsyncSession, user_id: int) -> dict:
         .order_by(InterestTrack.tracked_at.desc()).limit(50)
     )).scalars().all()
     latest_interests = {}
+
+    # ── 行为追踪：参考点击数据（权重信号）───────────
+    from services.activity_service import get_reference_interests
+    ref_data = await get_reference_interests(db, user_id)
+
+    # 将参考点击数据转换为兴趣权重（每个分类点击 +3 权重）
+    ref_weights = {}
+    if ref_data.get("category_counts"):
+        for cat_name, count in ref_data["category_counts"].items():
+            ref_weights[cat_name] = count * 3
     for t in tracks:
         if t.field not in latest_interests:
             latest_interests[t.field] = t.score
@@ -87,17 +97,30 @@ async def _collect_user_data(db: AsyncSession, user_id: int) -> dict:
     for e in events:
         event_types[e.event_type.value if hasattr(e.event_type, 'value') else str(e.event_type)] += 1
 
+    # 融合参考点击权重到兴趣分布
+    boosted_interests = dict(all_interests)
+    for cat_name, weight in ref_weights.items():
+        # 将参考分类映射到可能的兴趣领域
+        mapping = {
+            "考研深造": "科研", "求职就业": "编程", "创业经历": "创业",
+            "转行跨界": "社交", "大学生活": "社交", "失败教训": "哲学",
+        }
+        mapped = mapping.get(cat_name, cat_name)
+        boosted_interests[mapped] = boosted_interests.get(mapped, 0) + weight
+
     return {
         "record_count": record_count,
         "event_count": event_count,
         "memory_count": len(memories),
         "top_memories": [m.memory_content[:100] for m in memories[:10]],
-        "interests": dict(sorted(all_interests.items(), key=lambda x: -x[1])[:8]),
+        "interests": dict(sorted(boosted_interests.items(), key=lambda x: -x[1])[:8]),
         "patterns": dict(sorted(all_patterns.items(), key=lambda x: -x[1])[:5]),
         "emotions": dict(all_emotions),
         "goals": [g.description for g in goals],
         "event_types": dict(event_types),
         "latest_interests": latest_interests,
+        "ref_weights": ref_weights,
+        "ref_insight": ref_data.get("insight", ""),
     }
 
 

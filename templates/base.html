@@ -54,6 +54,9 @@
             <a href="/goals" class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm font-medium {{ 'active' if active == 'goals' else '' }}">
                 <i class="fa-solid fa-bullseye w-4 text-center"></i> 人生目标
             </a>
+            <a href="/references" class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm font-medium {{ 'active' if active == 'references' else '' }}">
+                <i class="fa-solid fa-globe w-4 text-center"></i> 人生参考
+            </a>
 
             <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-5 mb-2">实验室</p>
             <a href="/simulation" class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm font-medium {{ 'active' if active == 'simulation' else '' }}">
@@ -139,6 +142,13 @@
                 btn.style.pointerEvents = 'none';
             }
         });
+
+        // ── 页面访问追踪 ──
+        fetch('/track', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({path: window.location.pathname}),
+        }).catch(() => {});
 
         // ── GET 链接防重复：带 data-loading 属性的链接点击时显示遮罩 ──
         document.addEventListener('click', function(e) {

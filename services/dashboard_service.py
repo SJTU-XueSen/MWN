@@ -133,6 +133,13 @@ async def get_dashboard_data(db: AsyncSession, user_id: int) -> dict:
         ).order_by(LifeGoal.importance.desc()).limit(3)
     )).scalars().all()
 
+    # ── 访问行为追踪 ──────────────────────────────────
+    from services.activity_service import get_visit_summary
+    try:
+        visit_summary = await get_visit_summary(db, user_id)
+    except Exception:
+        visit_summary = {"total_visits": 0, "top_pages": [], "insight": "", "unique_pages": 0}
+
     # ── AI 洞察生成 ───────────────────────────────────
     insight = _generate_insight(
         streak=streak,
@@ -144,6 +151,18 @@ async def get_dashboard_data(db: AsyncSession, user_id: int) -> dict:
         achieved_count=achieved_goal_count,
         persona=persona,
     )
+    if visit_summary.get("insight"):
+        insight = visit_summary["insight"] + "。" + insight
+
+    # ── 人生参考兴趣 ──────────────────────────────────
+    from services.activity_service import get_reference_interests
+    ref_interests = {}
+    try:
+        ref_interests = await get_reference_interests(db, user_id)
+        if ref_interests.get("insight"):
+            insight = ref_interests["insight"] + "。" + insight
+    except Exception:
+        pass
 
     return {
         "user": user,
@@ -165,6 +184,8 @@ async def get_dashboard_data(db: AsyncSession, user_id: int) -> dict:
         "interests": latest_interests,
         "active_goals": active_goals,
         "insight": insight,
+        "visit_summary": visit_summary,
+        "ref_interests": ref_interests,
     }
 
 

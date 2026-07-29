@@ -258,6 +258,7 @@ class LifeGoal(Base):
     target_year = Column(Integer, nullable=True)    # 目标年份 2035
     target_period = Column(String(50), nullable=True)  # 周期：短期/中期/长期/每日/每周
     status = Column(String(20), default="active")   # active / achieved / abandoned
+    ai_gap_analysis = Column(Text, nullable=True)    # AI 差距分析结果
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -403,3 +404,47 @@ class GrowthReport(Base):
     generated_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="growth_reports")
+
+
+# ══════════════════════════════════════════════════════
+#  12. 页面访问追踪表
+# ══════════════════════════════════════════════════════
+
+class PageVisit(Base):
+    """用户页面访问行为追踪——轻量信号，辅助 AI 理解用户真实兴趣"""
+    __tablename__ = "page_visits"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    path = Column(String(100), nullable=False)
+    label = Column(String(50), nullable=True)
+    visit_count = Column(Integer, default=1)
+    last_visited = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    first_visited = Column(DateTime, default=datetime.utcnow)
+
+
+# ══════════════════════════════════════════════════════
+#  13. 人生拟真体验会话表
+# ══════════════════════════════════════════════════════
+
+class SimulationSession(Base):
+    """一次人生拟真体验：用户选择未来人格后进入的叙事模拟"""
+    __tablename__ = "simulation_sessions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    future_self_id = Column(Integer, ForeignKey("future_selves.id"), nullable=True)
+    simulation_id = Column(Integer, ForeignKey("simulations.id"), nullable=True)
+
+    random_seed = Column(Integer, default=42)
+    start_year = Column(Integer, nullable=False)
+    current_year = Column(Integer, nullable=False)
+    current_age = Column(Integer, nullable=True)
+
+    persona_snapshot = Column(JSON, nullable=True)  # 初始人格权重
+    current_state = Column(JSON, nullable=True)     # 当前人格状态
+    event_log = Column(JSON, default=list)           # 事件记录 [{year, event, choice, outcome}]
+    status = Column(String(20), default="active")    # active / finished
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

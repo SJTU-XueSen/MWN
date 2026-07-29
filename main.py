@@ -43,6 +43,9 @@ from routers.goals import router as goals_router
 from routers.simulate import router as simulate_router
 from routers.future_chat import router as future_chat_router
 from routers.settings import router as settings_router
+from routers.references import router as references_router
+from routers.activity import router as activity_router
+from routers.experience import router as experience_router
 app.include_router(auth_router)
 app.include_router(legal_router)
 app.include_router(events_router)
@@ -52,6 +55,9 @@ app.include_router(goals_router)
 app.include_router(simulate_router)
 app.include_router(future_chat_router)
 app.include_router(settings_router)
+app.include_router(references_router)
+app.include_router(activity_router)
+app.include_router(experience_router)
 
 
 # ── 工具函数 ──────────────────────────────────────────

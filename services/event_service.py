@@ -138,6 +138,88 @@ def analyze_event(title: str, description: str, event_type: str) -> dict:
     }
 
 
+def _rule_event_memory(title: str, desc: str, label: str, etype: str, analysis: dict) -> str:
+    """规则引擎生成更自然的生命记忆"""
+
+    emotion = analysis.get("emotion", "")
+    emotion_text = {
+        "positive": "这次经历让你感到充实和满足",
+        "negative": "这次经历带来了挫败感，但也让你开始反思",
+        "neutral": "这次经历平平淡淡，但作为一段经历被记住",
+    }.get(emotion, "")
+
+    impact = analysis.get("ai_impact", "")
+
+    # 按事件类型写不同的句式
+    templates = {
+        "turning_point": f"一个改变了方向的关键时刻——{title}。{impact}",
+        "achievement": f"一次值得记住的突破——{title}。{emotion_text}。{impact}",
+        "failure": f"一次让你成长的失败——{title}。{emotion_text}。{impact}",
+        "decision": f"一个需要勇气的决定——{title}。{impact}",
+        "competition": f"一次全力以赴的较量——{title}。{impact}",
+        "project": f"一段投入了大量时间和精力的经历——{title}。{impact}",
+        "relationship": f"一段重要的人际关系变化——{title}。{impact}",
+        "study": f"一段持续学习的旅程——{title}。{impact}",
+        "social": f"一次有意义的社交经历——{title}。{impact}",
+        "habit": f"一个逐渐融入生活的习惯——{title}。{impact}",
+        "emotion": f"一次让你印象深刻的情绪波动——{title}。{impact}",
+    }
+
+    template = templates.get(etype, f"{label}：{title}。{impact}")
+    # 添加描述细节
+    if desc and len(desc) > 5:
+        template += f" 具体来说：{desc[:120]}"
+
+    return template[:300]
+
+
+async def _llm_event_memory(title: str, desc: str, label: str, analysis: dict) -> str:
+    """用 LLM 生成有洞察力的生命记忆"""
+    from config import LLM_ENABLED
+    if not LLM_ENABLED:
+        return ""
+
+    prompt = f"""从以下人生事件中提取一句话生命记忆。这句话将被存入长期记忆库，用于构建数字人格。
+
+事件类型：{label}
+事件标题：{title}
+事件描述：{desc or '(无)'}
+
+AI 分析：
+- 情绪：{analysis.get('emotion', '')}
+- 影响：{analysis.get('ai_impact', '')}
+- 人格影响：{analysis.get('persona_delta', {})}
+
+要求：一句话，40字以内，抓住这件事对这个人意味着什么。不是复述事件，而是提炼这件事对人格的塑造。
+只返回这句话。"""
+
+    try:
+        import httpx
+        from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                f"{DEEPSEEK_BASE_URL}/v1/chat/completions",
+                json={
+                    "model": "deepseek-chat",
+                    "messages": [
+                        {"role": "system", "content": "你是擅长提炼人生记忆的 AI。输出简洁、有洞察力。"},
+                        {"role": "user", "content": prompt},
+                    ],
+                    "temperature": 0.3,
+                    "max_tokens": 150,
+                },
+                headers={
+                    "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+            )
+            if resp.status_code == 200:
+                return resp.json()["choices"][0]["message"]["content"].strip()
+    except Exception:
+        pass
+    return ""
+
+
 # ── CRUD ───────────────────────────────────────────────
 
 async def create_event(
@@ -187,13 +269,13 @@ async def _process_event_to_memory(
         {},
     ).get("label", str(event.event_type))
 
-    memory_parts = [f"{event_label}：{event.title}"]
-    if analysis.get("interest_tags"):
-        memory_parts.append(f"涉及{', '.join(analysis['interest_tags'])}")
-    if analysis.get("ai_impact"):
-        memory_parts.append(analysis["ai_impact"])
+    event_type_str = event.event_type.value if isinstance(event.event_type, EventType) else str(event.event_type)
 
-    memory_content = "。".join(memory_parts) + "。"
+    # ★ 尝试 LLM 生成有洞察力的记忆
+    memory_content = await _llm_event_memory(event.title, event.description or "", event_label, analysis)
+    if not memory_content:
+        # 回退：更自然的规则生成
+        memory_content = _rule_event_memory(event.title, event.description or "", event_label, event_type_str, analysis)
 
     # 重要性评分：基于事件类型
     IMPORTANCE_MAP = {
@@ -209,10 +291,7 @@ async def _process_event_to_memory(
         "habit": 0.5,
         "emotion": 0.35,
     }
-    importance = IMPORTANCE_MAP.get(
-        event.event_type.value if isinstance(event.event_type, EventType) else event.event_type,
-        0.5,
-    )
+    importance = IMPORTANCE_MAP.get(event_type_str, 0.5)
     # 有更多兴趣标签会提高重要性
     importance = min(0.95, importance + len(analysis.get("interest_tags", [])) * 0.03)
 
@@ -254,6 +333,7 @@ async def delete_event(db: AsyncSession, event: LifeEvent):
     # 删除关联的 life_memories
     memories = (await db.execute(
         select(LifeMemory).where(
+            LifeMemory.user_id == event.user_id,
             LifeMemory.source_type == MemorySourceType.EVENT,
             LifeMemory.source_id == event.id,
         )

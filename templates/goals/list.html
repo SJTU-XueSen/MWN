@@ -43,6 +43,12 @@
                             {% if goal.description %}
                             <p class="text-sm text-gray-400 mt-1.5 line-clamp-2">{{ goal.description }}</p>
                             {% endif %}
+                            {% if goal.ai_gap_analysis %}
+                            <div class="mt-2 p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
+                                <p class="text-xs text-indigo-400 mb-1">🤖 AI 差距分析</p>
+                                <p class="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap">{{ goal.ai_gap_analysis[:300] }}</p>
+                            </div>
+                            {% endif %}
                             <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
                                 {% if goal.target_year %}
                                 <span><i class="fa-solid fa-calendar-check mr-1"></i>{{ goal.target_year }}年</span>
@@ -53,6 +59,9 @@
                     </div>
                     <!-- 操作 -->
                     <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+                        <a href="/goals/{{ goal.id }}/analyze"
+                           class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-indigo-400 hover:bg-indigo-500/10 no-underline"
+                           title="AI分析差距"><i class="fa-solid fa-brain"></i></a>
                         <a href="/goals/{{ goal.id }}/edit"
                            class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-gray-400 hover:text-white hover:bg-white/10 no-underline"
                            title="编辑"><i class="fa-solid fa-pen"></i></a>

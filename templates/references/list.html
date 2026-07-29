@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}人生参考 - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-8 py-8">
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold">人生参考</h2>
+        <p class="text-gray-400 text-sm mt-1">联网搜索真实大学生的人生经历，从中获取经验、了解不同人生选择的可能性</p>
+        {% if user_context %}
+        <p class="text-xs text-indigo-400 mt-1">
+            <i class="fa-solid fa-bullseye mr-1"></i>
+            根据你的专业和兴趣（{{ user_context }}）精准推送
+        </p>
+        {% endif %}
+        <p class="text-xs text-gray-600 mt-1">
+            <i class="fa-solid fa-circle-info mr-1"></i>
+            内容来自公开网络，点击标题可跳转原文。
+        </p>
+    </div>
+
+    <!-- 分类标签 -->
+    <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+        {% for key, cat in categories.items() %}
+        <a href="/references?category={{ key }}"
+           class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap no-underline transition
+                  {% if current == key %}bg-indigo-500/20 text-indigo-400 border border-indigo-500/30
+                  {% else %}bg-white/5 text-gray-400 hover:bg-white/10 border border-white/5{% endif %}">
+            {{ cat.icon }} {{ cat.label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- 搜索结果 -->
+    {% if results %}
+    <div class="space-y-3">
+        {% for item in results %}
+        <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer"
+           class="card p-4 block no-underline group"
+           data-ref-click data-ref-category="{{ current }}" data-ref-title="{{ item.title }}">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                    <h4 class="font-medium text-sm text-gray-200 group-hover:text-indigo-400 transition leading-snug">
+                        {{ item.title }}
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">{{ item.snippet[:200] }}</p>
+                </div>
+                <span class="text-xs flex-shrink-0 mt-0.5">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-gray-600 group-hover:text-indigo-400 transition"></i>
+                </span>
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+                <span class="tag bg-white/5 text-gray-500 text-xs">
+                    {{ item.source_icon }} {{ item.source_name }}
+                </span>
+                <span class="text-xs text-gray-600 truncate max-w-[300px]">{{ item.url }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card p-12 text-center">
+        <div class="text-4xl mb-3">🔍</div>
+        <p class="text-sm text-gray-400 mb-1">搜索中或暂无结果</p>
+        <p class="text-xs text-gray-600">换个分类试试，或等待网络搜索完成</p>
+    </div>
+    {% endif %}
+
+    <!-- 底部说明 -->
+    <div class="card p-4 mt-6 bg-white/2">
+        <p class="text-xs text-gray-500 leading-relaxed">
+            <i class="fa-solid fa-shield-halved mr-1 text-gray-400"></i>
+            <strong>免责声明：</strong>以上内容来自搜索引擎公开结果，AI人生镜像不对其真实性、准确性负责。所有内容版权归原作者所有，点击标题可跳转至原始网页。
+        </p>
+    </div>
+</div>
+
+<script>
+// ── 人生参考点击追踪 ──
+(function() {
+    function trackRefClick(type, detail) {
+        fetch('/track/ref-click', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({type: type, detail: detail}),
+        }).catch(() => {});
+    }
+
+    // 追踪参考链接点击
+    document.querySelectorAll('[data-ref-click]').forEach(el => {
+        el.addEventListener('click', function() {
+            const cat = this.getAttribute('data-ref-category') || '';
+            const title = this.getAttribute('data-ref-title') || '';
+            trackRefClick('article', {category: cat, title: title});
+        });
+    });
+
+    // 追踪分类标签切换（已经通过URL参数实现，这里记录初始分类）
+    const params = new URLSearchParams(window.location.search);
+    const initCat = params.get('category') || 'kaoyan';
+    trackRefClick('category_view', {category: initCat});
+})();
+</script>
+{% endblock %}

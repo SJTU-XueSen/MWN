@@ -33,7 +33,7 @@ async def get_future_self(db: AsyncSession, fs_id: int) -> Optional[FutureSelf]:
 
 async def get_chat_messages(db: AsyncSession, future_self_id: int, limit: int = 50) -> List[ChatMessage]:
     return (await db.execute(
-        select(ChatMessage).where(ChatMessage.future_self_id == future_self_id)
+        select(ChatMessage).where(ChatMessage.user_id == user_id, ChatMessage.future_self_id == future_self_id)
         .order_by(ChatMessage.created_at.asc()).limit(limit)
     )).scalars().all()
 
@@ -61,7 +61,7 @@ async def send_message(
 
     # 获取对话历史（最近10轮）
     history = (await db.execute(
-        select(ChatMessage).where(ChatMessage.future_self_id == future_self_id)
+        select(ChatMessage).where(ChatMessage.user_id == user_id, ChatMessage.future_self_id == future_self_id)
         .order_by(ChatMessage.created_at.desc()).limit(20)
     )).scalars().all()
     history = list(reversed(history))
@@ -255,12 +255,93 @@ def _fallback_reply(label: str, gap: int, memories: list) -> str:
         return f"才{gap}年，其实变化还没那么远。{mem_hint}不过每一步选择确实在慢慢塑造不一样的人。你想知道什么？"
 
 
+async def stream_reply(future_self: FutureSelf, user_id: int, user_message: str):
+    """流式生成 FutureSelf 回复——逐 token 输出"""
+    profile = future_self.profile or {}
+    persona_label = future_self.persona_label or "未来的自己"
+    path_desc = profile.get("description", "")
+    persona_shift = profile.get("persona_shift", {})
+    grounding = profile.get("grounding", "")
+    future_year = future_self.target_year or 2031
+    gap = future_year - 2026
+
+    system_prompt = f"""你是"{persona_label}"——用户的未来自我，{future_year}年的版本。
+背景：{path_desc}
+人格：{_json.dumps(persona_shift, ensure_ascii=False)}
+依据：{grounding}
+规则：第一人称，简洁（1-3句），像朋友聊天。你是{gap}年后的ta。"""
+
+    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}]
+
+    # 尝试智谱流式
+    if ZHIPU_API_KEY and ZHIPU_API_KEY != "your-zhipu-api-key-here":
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                async with client.stream(
+                    "POST", f"{ZHIPU_BASE_URL}/chat/completions",
+                    json={"model": "glm-4-flash", "messages": messages, "temperature": 0.7, "max_tokens": 500, "stream": True},
+                    headers={"Authorization": f"Bearer {ZHIPU_API_KEY}", "Content-Type": "application/json"},
+                ) as resp:
+                    if resp.status_code == 200:
+                        async for line in resp.aiter_lines():
+                            if line.startswith("data: "):
+                                data = line[6:]
+                                if data == "[DONE]":
+                                    return
+                                try:
+                                    chunk = _json.loads(data)
+                                    delta = chunk["choices"][0].get("delta", {})
+                                    content = delta.get("content", "")
+                                    if content:
+                                        yield content
+                                except Exception:
+                                    pass
+                        return
+        except Exception:
+            pass
+
+    # 尝试 DeepSeek 流式
+    if DEEPSEEK_API_KEY and DEEPSEEK_API_KEY != "sk-your-deepseek-api-key-here":
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                async with client.stream(
+                    "POST", f"{DEEPSEEK_BASE_URL}/v1/chat/completions",
+                    json={"model": "deepseek-chat", "messages": messages, "temperature": 0.7, "max_tokens": 500, "stream": True},
+                    headers={"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"},
+                ) as resp:
+                    if resp.status_code == 200:
+                        async for line in resp.aiter_lines():
+                            if line.startswith("data: "):
+                                data = line[6:]
+                                if data == "[DONE]":
+                                    return
+                                try:
+                                    chunk = _json.loads(data)
+                                    delta = chunk["choices"][0].get("delta", {})
+                                    content = delta.get("content", "")
+                                    if content:
+                                        yield content
+                                except Exception:
+                                    pass
+                        return
+        except Exception:
+            pass
+
+    # 回退
+    yield f"说实话，{gap}年真的能改变很多。你想具体聊什么？"
+
+
+import json as _json
+
+
 async def delete_future_self_chat(db: AsyncSession, future_self_id: int, user_id: int):
     fs = await get_future_self(db, future_self_id)
     if not fs or fs.user_id != user_id:
         return
     messages = (await db.execute(
-        select(ChatMessage).where(ChatMessage.future_self_id == future_self_id)
+        select(ChatMessage).where(ChatMessage.user_id == user_id, ChatMessage.future_self_id == future_self_id)
     )).scalars().all()
     for m in messages:
         await db.delete(m)

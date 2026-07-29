@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}人生体验 - AI人生镜像{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-8 py-8">
+    <!-- 顶栏 -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-xl font-bold">人生体验</h2>
+            <p class="text-xs text-gray-500 mt-1">
+                {{ session.current_year }}年 · {{ session.current_age }}岁 · 种子 #{{ session.random_seed }}
+            </p>
+        </div>
+        <a href="/experience/restart/{{ session.id }}"
+           class="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-200 border border-white/10 transition"
+           onclick="return confirm('重新开始？当前进度将丢失。')">
+            <i class="fa-solid fa-rotate-right mr-1"></i>重新开始
+        </a>
+    </div>
+
+    <!-- 人格权重 -->
+    {% set traits = session.current_state or session.persona_snapshot or {} %}
+    <div class="card p-3 mb-4 bg-white/3">
+        <div class="flex items-center gap-2 flex-wrap text-xs">
+            <span class="text-gray-500">当前状态</span>
+            {% for k, v in traits.items() %}
+            <span class="tag bg-white/5 text-gray-400">{{ k }} {{ v }}</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 上一次选择的结果 -->
+    {% if last_result %}
+    <div class="card p-4 mb-4 bg-amber-500/5 border border-amber-500/10">
+        <p class="text-xs text-amber-400 mb-1">你的选择</p>
+        <p class="text-sm text-gray-300">{{ last_result.chosen }}</p>
+        <p class="text-xs text-gray-400 mt-2">{{ last_result.outcome }}</p>
+        {% if last_result.trait_changes %}
+        <div class="flex gap-1 mt-2">
+            {% for k, v in last_result.trait_changes.items() %}
+            <span class="tag text-xs {% if v > 0 %}bg-emerald-500/15 text-emerald-400{% else %}bg-rose-500/15 text-rose-400{% endif %}">{{ k }} {% if v > 0 %}+{% endif %}{{ v }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- 状态面板 -->
+    {% if scene.current_traits %}
+    {% set stable = ['专注度','独立性','探索欲','社交需求','抗挫力'] %}
+    {% set growing = ['技术能力','表达能力','管理能力','行动力'] %}
+    <div class="card p-3 mb-4 bg-white/3">
+        <p class="text-xs text-gray-500 mb-2">{{ session.current_year }}年 · {{ session.current_age }}岁</p>
+        {% set life_state = scene.current_traits.get('_life_state', {}) %}
+        {% if life_state %}
+        <div class="flex flex-wrap gap-1.5 mb-2">
+            {% for k, v in life_state.items() %}
+            <span class="tag text-xs bg-amber-500/10 text-amber-400">{{ k }}: {{ v }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <p class="text-xs text-gray-600 mb-1">人格倾向</p>
+        <div class="flex flex-wrap gap-1.5 mb-2">
+            {% for k, v in scene.current_traits.items() %}
+            {% if k in stable %}
+            {% set delta = scene.trait_deltas.get(k, 0) %}
+            <span class="tag text-xs {% if delta > 0 %}bg-emerald-500/10 text-emerald-400{% elif delta < 0 %}bg-rose-500/10 text-rose-400{% else %}bg-white/5 text-gray-400{% endif %}">
+                {{ k }} {{ v }}{% if delta != 0 %} {% if delta > 0 %}↑{% else %}↓{% endif %}{% endif %}
+            </span>
+            {% endif %}
+            {% endfor %}
+        </div>
+        <p class="text-xs text-gray-600 mb-1">成长能力</p>
+        <div class="flex flex-wrap gap-1.5">
+            {% for k, v in scene.current_traits.items() %}
+            {% if k in growing %}
+            {% set delta = scene.trait_deltas.get(k, 0) %}
+            <span class="tag text-xs {% if delta > 0 %}bg-emerald-500/10 text-emerald-400{% elif delta < 0 %}bg-rose-500/10 text-rose-400{% else %}bg-white/5 text-gray-400{% endif %}">
+                {{ k }} {{ v }}{% if delta != 0 %} {% if delta > 0 %}↑{% else %}↓{% endif %}{% endif %}
+            </span>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 当前场景 -->
+    {% if scene %}
+    <div class="card p-6 mb-5 bg-gradient-to-br from-indigo-500/3 to-purple-500/3 border-indigo-500/10">
+        <p class="text-gray-200 leading-relaxed text-sm">{{ scene.narrative }}</p>
+    </div>
+
+    <!-- 选择 -->
+    {% if scene.choices %}
+    <div class="space-y-3 mb-6">
+        {% for c in scene.choices %}
+        <form method="POST" action="/experience/play/{{ session.id }}" class="m-0">
+            <input type="hidden" name="choice" value="{{ loop.index0 }}">
+            <button type="submit"
+                    class="w-full text-left p-4 rounded-xl border border-white/10 bg-white/3 hover:bg-white/8 hover:border-white/20 transition cursor-pointer group">
+                <p class="text-sm text-gray-200 group-hover:text-white transition mb-2">{{ c.text }}</p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    {% if c.gain %}
+                    <div><span class="text-emerald-400">✓ {{ c.gain }}</span></div>
+                    {% endif %}
+                    {% if c.cost %}
+                    <div><span class="text-rose-400">✗ {{ c.cost }}</span></div>
+                    {% endif %}
+                </div>
+                {% if c.hint %}
+                <p class="text-xs text-gray-600 mt-2">{{ c.hint }}</p>
+                {% endif %}
+            </button>
+        </form>
+        {% endfor %}
+
+        <!-- 开放式选择 -->
+        <form method="POST" action="/experience/play/{{ session.id }}" class="m-0">
+            <input type="hidden" name="choice" value="-1">
+            <div class="p-4 rounded-xl border border-dashed border-purple-500/20 bg-purple-500/3 hover:border-purple-500/40 transition">
+                <p class="text-xs text-purple-400 mb-2">✧ 或者，你想做什么？</p>
+                <div class="flex gap-2">
+                    <input type="text" name="custom_choice" class="input-field flex-1 text-xs py-2"
+                           placeholder="写下你自己的选择...">
+                    <button type="submit"
+                            class="btn-primary text-white px-4 py-2 rounded-lg text-xs font-semibold flex-shrink-0 cursor-pointer">
+                        确定
+                    </button>
+                </div>
+                <p class="text-xs text-gray-600 mt-2">你的人格权重仍然会影响结果，但选择本身是自由的</p>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- 没有场景时 -->
+    {% else %}
+    <div class="card p-12 text-center">
+        <p class="text-sm text-gray-500">体验数据加载中...</p>
+    </div>
+    {% endif %}
+
+    <!-- 底部理念 -->
+    <div class="text-center mt-6">
+        <p class="text-xs text-gray-500 leading-relaxed">
+            🪞 人生模拟不是预测未来，而是探索可能性。<br>
+            你的选择、习惯和价值倾向决定了某些趋势。<br>
+            但随机事件、环境变化和偶然相遇，也会共同塑造人生。<br>
+            <span class="text-gray-600">种子 #{{ session.random_seed }} · 每一次模拟都是独立不可再现的人生</span>
+        </p>
+    </div>
+</div>
+{% endblock %}
