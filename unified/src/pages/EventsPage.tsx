@@ -233,6 +233,9 @@ export default function EventsPage() {
                                 {emotionStr === "positive" ? "😊" : emotionStr === "negative" ? "😔" : "😐"}
                               </span>
                             )}
+                            <button onClick={async (e) => { e.preventDefault(); e.stopPropagation(); if (!confirm(`删除「${event.title}」？`)) return; await fetch(`/api/mirror/events/${event.id}`, { method: "DELETE" }); load(); }}
+                              className="w-5 h-5 rounded flex items-center justify-center text-xs text-gray-600 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition"
+                              title="删除"><i className="fa-solid fa-xmark"></i></button>
                             <i className="fa-solid fa-chevron-right text-gray-600 group-hover:text-gray-400 transition text-xs"></i>
                           </div>
                         </div>

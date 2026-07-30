@@ -9,10 +9,31 @@ export default function Journal() {
   const [mood, setMood] = useState("");
   const [recordDate, setRecordDate] = useState(new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const nav = useNavigate();
 
   const load = () => fetch("/api/mirror/journal").then(r => r.json()).then(setRecords);
   useEffect(() => { load(); }, []);
+
+  function startEdit(r: any) {
+    setEditingId(r.id);
+    setContent(r.content || "");
+    setMood(r.mood || "");
+    setRecordDate(r.date?.slice(0, 10) || new Date().toISOString().slice(0, 10));
+    setShowForm(false);
+  }
+
+  async function saveEdit() {
+    if (!content.trim() || !editingId) return;
+    setLoading(true);
+    const r = await fetch(`/api/mirror/journal/${editingId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, mood, record_date: recordDate }),
+    });
+    if (r.ok) { setEditingId(null); setContent(""); setMood(""); load(); }
+    setLoading(false);
+  }
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -117,13 +138,14 @@ export default function Journal() {
                   <i className="fa-solid fa-chevron-right text-gray-600 group-hover:text-gray-400 transition flex-shrink-0 mt-2"></i>
                 </div>
               </a>
-              <button
-                onClick={(e) => { e.stopPropagation(); deleteRecord(r.id); }}
-                className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition opacity-0 group-hover:opacity-100"
-                title="删除"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
+              <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                <button onClick={(e) => { e.stopPropagation(); startEdit(r); }}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition"
+                  title="编辑"><i className="fa-solid fa-pen"></i></button>
+                <button onClick={(e) => { e.stopPropagation(); deleteRecord(r.id); }}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                  title="删除"><i className="fa-solid fa-xmark"></i></button>
+              </div>
             </div>
           ))}
         </div>

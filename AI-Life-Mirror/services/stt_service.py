@@ -1,4 +1,5 @@
 """FunASR 语音识别服务 — 支持热词"""
+import json as _json
 import logging
 import os
 import tempfile
@@ -6,10 +7,34 @@ import threading
 
 logger = logging.getLogger(__name__)
 
+# 热词持久化路径
+_HOTWORDS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "stt_hotwords.json")
+
 _model = None
 _model_loading = False
 _model_ready = False
 _hotwords = []
+
+def _load_hotwords():
+    global _hotwords
+    try:
+        if os.path.exists(_HOTWORDS_FILE):
+            with open(_HOTWORDS_FILE, "r", encoding="utf-8") as f:
+                _hotwords = _json.load(f)
+            logger.info(f"Loaded {len(_hotwords)} hotwords from disk")
+    except Exception:
+        pass
+
+def _save_hotwords():
+    try:
+        os.makedirs(os.path.dirname(_HOTWORDS_FILE), exist_ok=True)
+        with open(_HOTWORDS_FILE, "w", encoding="utf-8") as f:
+            _json.dump(_hotwords, f, ensure_ascii=False)
+    except Exception as e:
+        logger.error(f"Failed to save hotwords: {e}")
+
+# 启动时加载热词
+_load_hotwords()
 
 def _load_model():
     global _model, _model_loading, _model_ready
@@ -77,9 +102,10 @@ async def speech_to_text(audio_bytes: bytes, hotwords: list[str] = None) -> str:
             pass
 
 def add_hotwords(words: list[str]):
-    """添加全局热词"""
+    """添加全局热词，持久化到磁盘"""
     global _hotwords
     _hotwords = list(set(_hotwords + words))
+    _save_hotwords()
 
 def get_hotwords() -> list[str]:
     return list(_hotwords)

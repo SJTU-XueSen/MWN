@@ -10,7 +10,7 @@ from database.database import get_db, AsyncSessionLocal
 from database.models import (
     User, DailyRecord, LifeEvent, PersonaProfile, LifeGoal,
     Simulation, FutureSelf, ChatMessage, GrowthReport, LifeMemory,
-    MemorySourceType, EmotionType,
+    MemorySourceType, EmotionType, EventType,
 )
 
 router = APIRouter(prefix="/api/mirror", tags=["mirror-api"])
@@ -147,6 +147,23 @@ async def api_journal_create(request: Request):
         except Exception:
             pass
         return JSONResponse({"id": record.id, "ok": True})
+
+
+@router.put("/journal/{record_id}")
+async def api_journal_update(request: Request, record_id: int):
+    uid = _uid(request)
+    if not uid: return JSONResponse({"error": "not_logged_in"}, 401)
+    body = await request.json()
+    async with AsyncSessionLocal() as db:
+        record = await db.get(DailyRecord, record_id)
+        if not record or record.user_id != uid: return JSONResponse({"error": "not_found"}, 404)
+        if body.get("content"): record.content = body["content"]
+        if body.get("mood"): record.mood = body["mood"]
+        if body.get("record_date"):
+            try: record.record_date = datetime.fromisoformat(body["record_date"])
+            except Exception: pass
+        await db.commit()
+        return JSONResponse({"ok": True})
 
 
 @router.delete("/journal/{record_id}")
@@ -484,6 +501,27 @@ async def api_event_detail(request: Request, event_id: int):
             "display_icon": display["icon"], "display_label": display["label"],
             "memory": {"id": memory.id, "memory_content": memory.memory_content, "importance_score": memory.importance_score} if memory else None,
         })
+
+
+@router.put("/events/{event_id}")
+async def api_event_update(request: Request, event_id: int):
+    uid = _uid(request)
+    if not uid: return JSONResponse({"error": "not_logged_in"}, 401)
+    body = await request.json()
+    async with AsyncSessionLocal() as db:
+        from services.event_service import get_event_by_id
+        event = await get_event_by_id(db, event_id)
+        if not event or event.user_id != uid: return JSONResponse({"error": "not_found"}, 404)
+        if body.get("title"): event.title = body["title"]
+        if body.get("description"): event.description = body["description"]
+        if body.get("event_type"):
+            try: event.event_type = EventType(body["event_type"])
+            except Exception: pass
+        if body.get("occurred_at"):
+            try: event.occurred_at = datetime.fromisoformat(body["occurred_at"])
+            except Exception: pass
+        await db.commit()
+        return JSONResponse({"ok": True})
 
 
 @router.delete("/events/{event_id}")
