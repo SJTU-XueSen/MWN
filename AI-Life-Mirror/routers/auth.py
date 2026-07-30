@@ -1,6 +1,6 @@
 """认证路由：注册、登录、登出、个人资料"""
 from fastapi import APIRouter, Request, Depends, Form
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.database import get_db
@@ -50,44 +50,64 @@ async def register_page(request: Request):
 
 # ── API 路由 ─────────────────────────────────────────
 
+async def _parse_auth_body(request: Request):
+    """同时支持 JSON 和 Form 数据"""
+    ct = request.headers.get("content-type", "")
+    if "application/json" in ct:
+        return await request.json()
+    form = await request.form()
+    return {k: v for k, v in form.items()}
+
 @router.post("/register")
 async def handle_register(
     request: Request,
-    username: str = Form(...),
-    email: str = Form(...),
-    password: str = Form(...),
-    confirm_password: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
+    body = await _parse_auth_body(request)
+    username = body.get("username", "")
+    email = body.get("email", "")
+    password = body.get("password", "")
+    confirm_password = body.get("confirm_password", "")
+    real_name = body.get("real_name", "")
+    agree_terms = body.get("agree_terms", "")
     if password != confirm_password:
         return RedirectResponse(url="/auth/register?error=两次密码不一致", status_code=302)
     if len(password) < 6:
         return RedirectResponse(url="/auth/register?error=密码至少6位", status_code=302)
     if len(username) < 2 or len(username) > 50:
         return RedirectResponse(url="/auth/register?error=用户名2-50个字符", status_code=302)
+    if not agree_terms:
+        return RedirectResponse(url="/auth/register?error=请阅读并同意用户协议和隐私政策", status_code=302)
 
     if await get_user_by_username(db, username):
         return RedirectResponse(url="/auth/register?error=用户名已存在", status_code=302)
-    if await get_user_by_email(db, email):
+    if email and await get_user_by_email(db, email):
         return RedirectResponse(url="/auth/register?error=邮箱已被注册", status_code=302)
+    if not email:
+        email = f"{username}@mirror.local"
 
-    user = await create_user(db, username, email, password)
+    user = await create_user(db, username, email, password, real_name or None, True)
 
     request.session["user"] = {
         "id": user.id,
         "username": user.username,
+        "real_name": user.real_name or user.username,
         "email": user.email,
     }
-    return RedirectResponse(url="/", status_code=302)
+    resp = RedirectResponse(url="/", status_code=302)
+    resp.set_cookie("mirror_uid", str(user.id), httponly=False)
+    resp.set_cookie("mirror_username", user.username, httponly=False)
+    return resp
 
 
 @router.post("/login")
 async def handle_login(
     request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
+    body = await _parse_auth_body(request)
+    username = body.get("username", "")
+    password = body.get("password", "")
     user = await authenticate(db, username, password)
     if not user:
         return RedirectResponse(url="/auth/login?error=用户名或密码错误", status_code=302)
@@ -97,12 +117,19 @@ async def handle_login(
         "username": user.username,
         "email": user.email,
     }
-    return RedirectResponse(url="/", status_code=302)
+    resp = RedirectResponse(url="/", status_code=302)
+    resp.set_cookie("mirror_uid", str(user.id), httponly=False)
+    resp.set_cookie("mirror_username", user.username, httponly=False)
+    return resp
 
 
 @router.get("/logout")
 async def handle_logout(request: Request):
     request.session.clear()
+    resp = RedirectResponse(url="/auth/login", status_code=302)
+    resp.delete_cookie("mirror_uid")
+    resp.delete_cookie("mirror_username")
+    return resp
     return RedirectResponse(url="/auth/login", status_code=302)
 
 

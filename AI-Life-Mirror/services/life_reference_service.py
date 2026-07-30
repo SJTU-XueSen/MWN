@@ -69,8 +69,15 @@ CATEGORIES = {
 }
 
 
+import time
+_cache_ref = {}
+
 async def search_category(category_key: str, user_context: str = "") -> list[dict]:
-    """搜索某个分类下的真实经历，根据用户画像精准化"""
+    """搜索某个分类下的真实经历，根据用户画像精准化（5分钟缓存）"""
+    cache_key = f"{category_key}:{user_context}"
+    if cache_key in _cache_ref and time.time() - _cache_ref[cache_key][0] < 300:
+        return _cache_ref[cache_key][1]
+
     cat = CATEGORIES.get(category_key)
     if not cat:
         return []
@@ -103,7 +110,9 @@ async def search_category(category_key: str, user_context: str = "") -> list[dic
             r["source_name"] = _guess_source_name(url)
             unique.append(r)
 
-    return unique[:10]
+    result = unique[:10]
+    _cache_ref[cache_key] = (time.time(), result)
+    return result
 
 
 async def _search_ddg(query: str) -> list[dict]:

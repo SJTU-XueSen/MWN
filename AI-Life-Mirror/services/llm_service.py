@@ -295,7 +295,7 @@ async def analyze_event(title: str, description: str, event_type: str) -> dict:
         rb["engine"] = "rule_based"
         return rb
 
-    # 4. 合并
+    # 4. 合并 LLM 结果
     result.update(llm_result)
     result["engine"] = "deepseek"
     result.setdefault("emotion", "neutral")
@@ -307,6 +307,32 @@ async def analyze_event(title: str, description: str, event_type: str) -> dict:
     result.setdefault("honest_reflection", "")
     result.setdefault("behavior_patterns", [])
     result.setdefault("long_term_impact", "")
+
+    # 5. LLM 结果增强 —— 规则引擎补足深度和具体性
+    from services.event_service import analyze_event as rule_based
+    rb = rule_based(title, description, event_type)
+    if not result["interest_tags"]:
+        result["interest_tags"] = rb.get("interest_tags", [])
+    if not result["behavior_patterns"]:
+        result["behavior_patterns"] = rb.get("behavior_patterns", [])
+    if not result["persona_delta"]:
+        result["persona_delta"] = rb.get("persona_delta", {})
+    # ★ LLM 的分析通常太短太泛，用规则引擎的详细分析替换或增强
+    llm_impact = result.get("ai_impact", "")
+    rb_impact = rb.get("ai_impact", "")
+    if not llm_impact or len(llm_impact) < 80:
+        result["ai_impact"] = rb_impact
+    elif len(llm_impact) < 200:
+        result["ai_impact"] = llm_impact + "。" + rb_impact
+    # 鼓励、展望、诚实反思 —— LLM 通常不返回这些，直接用规则引擎
+    if not result.get("encouragement"):
+        result["encouragement"] = rb.get("encouragement", "")
+    if not result.get("outlook"):
+        result["outlook"] = rb.get("outlook", "")
+    if not result.get("honest_reflection"):
+        result["honest_reflection"] = rb.get("honest_reflection", "")
+    if not result.get("emotion_detail"):
+        result["emotion_detail"] = rb.get("emotion_detail", "")
 
     return result
 

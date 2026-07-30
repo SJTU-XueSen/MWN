@@ -97,6 +97,16 @@ async def journal_create(
     except Exception:
         pass
 
+    # 后台自动更新人格
+    try:
+        from services.persona_service import should_regenerate_persona, regenerate_persona_background
+        import asyncio as _asyncio
+        should, reason = await should_regenerate_persona(db, uid)
+        if should:
+            _asyncio.create_task(regenerate_persona_background(uid, reason))
+    except Exception:
+        pass
+
     return RedirectResponse(url=f"/journal/{record.id}", status_code=302)
 
 
@@ -242,6 +252,16 @@ async def event_create(
             "source": "life_event",
             "event_type": event_type,
         })
+    except Exception:
+        pass
+
+    # 后台自动更新人格
+    try:
+        from services.persona_service import should_regenerate_persona, regenerate_persona_background
+        import asyncio as _asyncio
+        should, reason = await should_regenerate_persona(db, uid)
+        if should:
+            _asyncio.create_task(regenerate_persona_background(uid, reason))
     except Exception:
         pass
 

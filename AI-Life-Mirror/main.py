@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -28,10 +28,41 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Session 中间件（signed cookie）
-app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
+# CORS — 允许 React 前端跨域
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Session 中间件（signed cookie）
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, same_site="none", https_only=False, max_age=86400)
+
+
+# ── iframe 嵌入模式：重写 redirect Location 以保持 /embed/ 前缀 ──
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+
+class EmbedRedirectMiddleware(BaseHTTPMiddleware):
+    """当请求来自 Vite /embed/ 代理时，自动重写 3xx 重定向的 Location 为 /embed/ 前缀"""
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        is_embedded = request.headers.get("X-Embedded") == "1"
+        if is_embedded and 300 <= response.status_code < 400:
+            location = response.headers.get("Location")
+            if location and location.startswith("/") and not location.startswith("/embed/") and not location.startswith("/api/") and not location.startswith("/auth/"):
+                response.headers["Location"] = "/embed" + location
+        return response
+
+app.add_middleware(EmbedRedirectMiddleware)
+
+# React 构建产物（统一前端）
+import os as _os
+_react_dist = os.path.join(BASE_DIR, "SJTU-Activity-Hub", "dist")
+if _os.path.exists(_react_dist):
+    app.mount("/assets", StaticFiles(directory=_os.path.join(_react_dist, "assets")), name="react_assets")
+
+# Mirror 自身的静态文件
+_static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+if _os.path.exists(_static_dir):
+    app.mount("/mirror-static", StaticFiles(directory=_static_dir), name="mirror_static")
 
 # 注册路由
 from routers.auth import router as auth_router
@@ -46,6 +77,8 @@ from routers.settings import router as settings_router
 from routers.references import router as references_router
 from routers.activity import router as activity_router
 from routers.experience import router as experience_router
+from routers.hub_api import router as hub_api_router
+from routers.mirror_api import router as mirror_api_router, _auth_router
 app.include_router(auth_router)
 app.include_router(legal_router)
 app.include_router(events_router)
@@ -58,6 +91,9 @@ app.include_router(settings_router)
 app.include_router(references_router)
 app.include_router(activity_router)
 app.include_router(experience_router)
+app.include_router(hub_api_router)
+app.include_router(mirror_api_router)
+app.include_router(_auth_router)
 
 
 # ── 工具函数 ──────────────────────────────────────────
@@ -79,11 +115,9 @@ def _render(request: Request, template: str, **kwargs):
 # ── 核心页面 ──────────────────────────────────────────
 
 @app.get("/")
-async def index(request: Request, db: AsyncSession = Depends(get_db)):
-    if r := _require_login(request): return r
-    from services.dashboard_service import get_dashboard_data
-    data = await get_dashboard_data(db, request.session["user"]["id"])
-    return _render(request, "index.html", active="index", **data)
+async def index(request: Request):
+    """API 服务器——前端由 Vite/React 负责"""
+    return {"app": APP_NAME, "version": APP_VERSION}
 
 
 # ── 占位路由（后续步骤实现）─────────────────────────────
@@ -93,3 +127,13 @@ async def index(request: Request, db: AsyncSession = Depends(get_db)):
 @app.get("/health")
 async def health():
     return {"status": "ok", "app": APP_NAME, "version": APP_VERSION}
+
+
+# ── SPA fallback：React 前端兜底 ──────────────────────
+from fastapi.responses import FileResponse as _FileResponse
+
+@app.get("/{full_path:path}")
+async def spa_fallback(request: Request, full_path: str):
+    if full_path.startswith(("api/", "auth/", "legal/", "health", "mirror-static/")):
+        return HTMLResponse("", status_code=404)
+    return HTMLResponse("", status_code=404)

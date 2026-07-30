@@ -5,35 +5,39 @@ __pycache__/
 dist/
 build/
 .venv/
-venv/
 
 # Environment
 .env
-!.env.example
 
 # Database & Data
 data/
 *.db
-*.sqlite3
 
-# ChromaDB
-chroma_data/
+# ChromaDB vector store
+chroma_db/
 .chroma/
 
 # IDE
 .vscode/
 .idea/
 *.swp
-*.swo
 
 # OS
 .DS_Store
 Thumbs.db
 
+# Node
+node_modules/
+unified/dist/
+
 # Tasks / Temp
 tasks/
 *.output
 
-# Node (SJTU-Activity-Hub)
-node_modules/
-.vite/
+# Nexus uploads
+nexus/static/uploads/
+
+# Large models
+*.pt
+*.bin
+*.onnx

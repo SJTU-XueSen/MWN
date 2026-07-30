@@ -374,3 +374,69 @@ async def get_persona_history(db: AsyncSession, user_id: int) -> list:
 async def get_persona_by_id(db: AsyncSession, persona_id: int) -> Optional[PersonaProfile]:
     """获取指定版本的画像"""
     return await db.get(PersonaProfile, persona_id)
+
+
+# ── 自动更新 ──────────────────────────────────────────
+
+async def should_regenerate_persona(db: AsyncSession, user_id: int) -> tuple[bool, str]:
+    """
+    判断是否应自动更新人格画像。
+    返回 (should_regenerate, reason)。
+
+    阈值：
+    - 无人格 → 记录+事件 ≥ 3 条即可生成
+    - 有人格 → 新增 ≥ 5 条，或 >24h 且新增 ≥ 3 条
+    """
+    current = await get_current_persona(db, user_id)
+
+    # 统计总数据量
+    record_count = (await db.execute(
+        select(func.count()).select_from(DailyRecord).where(DailyRecord.user_id == user_id)
+    )).scalar() or 0
+
+    event_count = (await db.execute(
+        select(func.count()).select_from(LifeEvent).where(LifeEvent.user_id == user_id)
+    )).scalar() or 0
+
+    total_data = record_count + event_count
+
+    if not current:
+        if total_data >= 3:
+            return True, f"首次生成：基于{total_data}条记录"
+        return False, ""
+
+    # 统计上次生成后的新增数据
+    new_records = (await db.execute(
+        select(func.count()).select_from(DailyRecord).where(
+            DailyRecord.user_id == user_id,
+            DailyRecord.created_at > current.generated_at,
+        )
+    )).scalar() or 0
+
+    new_events = (await db.execute(
+        select(func.count()).select_from(LifeEvent).where(
+            LifeEvent.user_id == user_id,
+            LifeEvent.occurred_at > current.generated_at,
+        )
+    )).scalar() or 0
+
+    total_new = new_records + new_events
+    hours_since = (datetime.utcnow() - current.generated_at).total_seconds() / 3600
+
+    if total_new >= 5:
+        return True, f"自动更新：新增{total_new}条记录"
+    if hours_since > 24 and total_new >= 3:
+        return True, f"自动更新：距上次{hours_since:.0f}小时，新增{total_new}条"
+
+    return False, ""
+
+
+async def regenerate_persona_background(user_id: int, trigger: str):
+    """后台异步重新生成人格（独立 DB session）"""
+    from database.database import AsyncSessionLocal
+    try:
+        async with AsyncSessionLocal() as db:
+            await generate_persona(db, user_id, trigger)
+            logger.info(f"✅ Auto-regenerated persona for user {user_id}: {trigger}")
+    except Exception as e:
+        logger.error(f"❌ Background persona regen failed for user {user_id}: {e}")

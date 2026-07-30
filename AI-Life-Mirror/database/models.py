@@ -59,8 +59,10 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(50), unique=True, nullable=False, index=True)
+    real_name = Column(String(50), nullable=True)   # 真实姓名
     email = Column(String(120), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
+    agreed_terms_at = Column(DateTime, nullable=True)  # 同意协议时间
 
     # 基本信息
     age = Column(Integer, nullable=True)

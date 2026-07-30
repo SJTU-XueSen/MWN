@@ -378,3 +378,19 @@ async def get_user_simulations(db: AsyncSession, user_id: int) -> List[Simulatio
 
 async def get_simulation_by_id(db: AsyncSession, sim_id: int) -> Optional[Simulation]:
     return await db.get(Simulation, sim_id)
+
+
+async def run_simulation_background(sim_id: int, user_id: int, question: str = "", variables: dict = None):
+    """后台异步运行模拟"""
+    from database.database import AsyncSessionLocal
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        async with AsyncSessionLocal() as db:
+            sim = await db.get(Simulation, sim_id)
+            if not sim: return
+            scenario = sim.scenario_type.value if hasattr(sim.scenario_type, 'value') else str(sim.scenario_type)
+            result = await run_simulation(db, user_id, scenario, question, variables)
+            logger.info(f"Simulation {sim_id} completed with {len(result.output_paths or [])} paths")
+    except Exception as e:
+        logger.error(f"Background simulation {sim_id} failed: {e}")

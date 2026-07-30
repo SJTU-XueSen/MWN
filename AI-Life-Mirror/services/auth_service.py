@@ -21,11 +21,15 @@ async def create_user(
     username: str,
     email: str,
     password: str,
+    real_name: str = None,
+    agree_terms: bool = False,
 ) -> User:
     user = User(
         username=username,
+        real_name=real_name,
         email=email,
         password_hash=hash_password(password),
+        agreed_terms_at=datetime.utcnow() if agree_terms else None,
         created_at=datetime.utcnow(),
     )
     db.add(user)

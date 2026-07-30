@@ -2,10 +2,10 @@
 import os
 from jinja2 import Environment, FileSystemLoader
 
-from config import BASE_DIR
+_TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
 
 _env = Environment(
-    loader=FileSystemLoader(os.path.join(BASE_DIR, "templates")),
+    loader=FileSystemLoader(_TEMPLATES_DIR),
     autoescape=True,
 )
 

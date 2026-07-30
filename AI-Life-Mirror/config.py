@@ -1,9 +1,11 @@
 """应用配置"""
 import os
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# BASE_DIR = 项目根目录（ai-camp/），跨子文件夹引用 data/ 和 .env
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(_BASE_DIR)  # 上一级 = ai-camp/
 
-# 加载 .env 文件
+# 加载 .env 文件（在根目录）
 try:
     from dotenv import load_dotenv
     load_dotenv(os.path.join(BASE_DIR, ".env"))
@@ -14,9 +16,9 @@ DATABASE_URL = f"sqlite+aiosqlite:///{os.path.join(BASE_DIR, 'data', 'app.db')}"
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 
-APP_NAME = "AI人生镜像"
+APP_NAME = "镜·界·联"
 APP_VERSION = "1.0.0"
-APP_DESCRIPTION = "基于数字人格的人生模拟与成长决策系统"
+APP_DESCRIPTION = "认识自己 · 走向世界 · 与他人共同创造"
 
 # ══════════════════════════════════════════════════════
 #  LLM 配置

@@ -98,22 +98,98 @@ def analyze_event(title: str, description: str, event_type: str) -> dict:
     for key, val in (TYPE_PERSONA_MAP.get(event_type, {})).items():
         persona_delta[key] = persona_delta.get(key, 0) + val
 
-    # 5. 生成 AI 影响摘要
-    impacts = []
+    # 5. 生成 AI 影响摘要 —— 更具体、更平衡
     event_label = EVENT_TYPE_CONFIG.get(event_type, {}).get("label", event_type)
-    if interest_tags:
-        impacts.append(f"与{', '.join(interest_tags[:3])}领域相关")
-    if emotion == "positive":
-        impacts.append(f"这是一次积极的{event_label}")
-    elif emotion == "negative":
-        impacts.append(f"这次{event_label}带来了负面情绪体验")
-    else:
-        impacts.append(f"这次{event_label}是一次中性经历")
-    if persona_delta:
-        top_traits = sorted(persona_delta.items(), key=lambda x: -x[1])[:2]
-        impacts.append(f"主要影响了{'和'.join(t[0] for t in top_traits)}")
+    impacts = []
+    # 基于事件类型生成更具洞察力的描述
+    type_specific = {
+        "competition": "竞技环境往往会放大一个人的抗压能力和临场反应模式",
+        "project": "项目经历反映了一个人在长期投入中的专注度和执行力",
+        "study": "学习过程中的方法选择暗示了一个人获取知识的偏好方式",
+        "decision": "重大决定背后通常隐藏着一个人的核心价值观和取舍逻辑",
+        "turning_point": "转折点事件往往能看出一个人面对变化时的适应策略",
+        "failure": "失败的真正价值不在于教训本身，而在于之后的行动调整",
+        "achievement": "成就不仅是能力的证明——也反映了一个人追求认可的方式",
+        "relationship": "重要关系中往往能看出一个人在亲密连接中的需求和边界",
+        "social": "社交经历的质量通常比数量更能反映一个人的社交动机",
+        "habit": "习惯的持续性比习惯本身更能说明一个人的自驱力模式",
+        "emotion": "情绪波动的背后通常有未被满足的期待或未被察觉的成长信号",
+    }
+    # 开篇：具体洞察
+    opening = type_specific.get(event_type, f"这次{event_label}是你的个人数据库中的一个重要节点")
+    impacts.append(opening)
 
-    ai_impact = "；".join(impacts) + "。"
+    # 兴趣关联
+    if interest_tags:
+        impacts.append(f"这件事与你在{'、'.join(interest_tags[:3])}方面的积累产生了关联")
+    else:
+        impacts.append(f"从标题和描述中暂未检测到明确的兴趣领域标签")
+
+    # 情绪分析
+    if emotion == "positive":
+        impacts.append(f"整体情绪偏积极——值得关注的是，积极体验中是否包含了真正的成长，还是仅仅因为结果符合预期")
+    elif emotion == "negative":
+        impacts.append(f"负面情绪并不意味着这次经历没有价值——相反，不适感往往是成长信号最密集的区域")
+    else:
+        impacts.append(f"中性情绪有时比强烈的情绪更有信息量——说明这件事对你来说可能需要更深的投入才能激发意义感")
+
+    # 人格影响
+    if persona_delta:
+        top_traits = sorted(persona_delta.items(), key=lambda x: -abs(x[1]))[:3]
+        trait_desc = "、".join(f"{t[0]}({'增强' if t[1]>0 else '调整'})" for t in top_traits)
+        impacts.append(f"主要人格维度受到的影响：{trait_desc}")
+    else:
+        impacts.append("暂未检测到显著的人格维度变化——不是所有重要的事都会立刻改变你")
+
+    ai_impact = "。".join(impacts) + "。"
+
+    # 6. 生成鼓励 —— 具体、诚实、不空洞
+    encouragements = {
+        "competition": "你愿意站上竞技场本身就已经是一种勇气——无论结果如何，选择参与而不是旁观，这个决定本身就值得认真对待",
+        "project": "能够把一个项目从头到尾推动下来的人并不多——你在这个过程中展现的执行力，未来会在更多场合被验证",
+        "study": "持续学习是少数能产生复利效应的事——你今天积累的每一点理解，都可能在未来的某个时刻突然串联起来",
+        "decision": "做出决定比做出完美的决定更重要——你选择了面对而不是逃避，这本身就是一种成熟",
+        "failure": "能够诚实地面对一次不理想的结果，并且把它记录下来——这本身就是反思能力的体现",
+        "achievement": "你走到了一个值得被记住的节点——花一点时间真正感受这份成就感，而不是立刻奔向下一个目标",
+        "turning_point": "站在转折点上的人往往看不到全貌——但回头看时，你会发现这段经历改变了你看世界的方式",
+        "relationship": "愿意在关系中投入真心的人，也在同时了解自己——你在关系中学到的东西会持续塑造你",
+        "social": "走出自己的小世界去和他人连接，这个动作本身就是成长——社交能力是在一次一次尝试中积累的",
+        "habit": "习惯的力量不在于每一天的变化——而在于时间拉长后，你成为了一个不一样的人",
+        "emotion": "你愿意去感受和记录自己的情绪——这是自我认知中非常重要但常常被忽略的一步",
+    }
+    encouragement = encouragements.get(event_type, "每一次记录自己的人生，都是在为未来的自己留下线索——这种习惯本身就值得被认真对待")
+
+    # 7. 诚实反思 —— 不回避可能的盲区
+    reflections = {
+        "competition": "值得想一想的是：你在竞赛中追求的是赢，还是验证自己？如果是前者，一次失败就可能动摇自信；如果是后者，每次参与都在加深对自己的理解",
+        "project": "有时候我们会把'忙碌'等同于'进步'——值得审视的是，这个项目是你真正想做的，还是你觉得应该做的",
+        "study": "学习效率高不等于学习方向对——偶尔停下来问自己：我学的东西真的是我需要的吗，还是只是别人告诉我'应该学'的",
+        "decision": "每一个决定背后都有未被说出来的假设——你当时是基于什么信息做出的判断？如果信息变了，你愿意调整吗",
+        "failure": "失败本身并不可怕——但如果你没有从中提炼出具体的行为调整，同样的模式可能会在另一个场景下重复",
+        "achievement": "成就是一个很好的锚点——但它不应该定义你是谁。如果下次没有达到这个高度，你依然是有价值的",
+        "turning_point": "转折点的意义往往不是当下能看清楚的——与其急着定义'这改变了我'，不如保持开放，让答案自己浮现",
+        "relationship": "在关系中，我们常常看到的不是对方——而是自己在关系中的投射。这段经历让你对自己有了什么新认识？",
+        "social": "社交不是收集联系人的游戏——真正的连接往往发生在你不再刻意'社交'的时候",
+        "habit": "习惯的形成过程中有一个危险期：当你觉得'已经养成了'的时候——恰恰是最容易松懈的时候",
+        "emotion": "情绪是信号，不是事实——当你感受到强烈情绪时，试着问自己：这个情绪想告诉我什么，而不是被它带着走",
+    }
+    honest_reflection = reflections.get(event_type, "值得思考的是：这次经历中，有哪些是你主动选择的，哪些是顺势发生的？区分这两者，能帮你更好地理解自己的决策模式")
+
+    # 8. 展望
+    outlooks = {
+        "competition": "未来如果再遇到类似的竞技场景，你可能会更清楚自己在压力下的反应模式——这是比比赛结果更宝贵的收获",
+        "project": "这个项目积累的经验和方法，可能会在你完全意想不到的地方派上用场——保持连接，不要急着归档",
+        "study": "学习是一个长线游戏——你今天建立的思维框架，会在未来处理更复杂问题时成为你的直觉",
+        "decision": "这次决定的后果会在时间中慢慢显现——保持观察，你可能会对自己的判断力有新的认识",
+        "turning_point": "未来的路不会是一条直线，但这次转折会成为你人生叙事中的一个关键章节",
+        "failure": "任何一次失败放在足够长的时间线上，都只是故事的一部分——真正重要的不是这一次结果，而是你在这之后做出的选择",
+        "achievement": "把这个成就放进你的成长档案——它是你能力的一个锚点，但不是你能力的上限",
+        "relationship": "每一段重要的关系都在为你的未来关系模式提供模板——请好好保存这段经历的正面遗产",
+        "social": "你正在建立的人际网络会在未来某个时刻产生意想不到的连接——保持真诚，比保持活跃更重要",
+        "habit": "如果这个习惯能持续超过半年，它对你的改变会超出现在能想象的范围——耐心是习惯最好的朋友",
+        "emotion": "未来当你再次经历类似的情绪时，今天的记录会成为你的参照系——你可能会发现自己已经成长了很多",
+    }
+    outlook = outlooks.get(event_type, "这次经历会随着时间推移在你的生命叙事中找到它的位置——关键是保持记录和反思的习惯")
 
     # 行为模式检测
     behavior_patterns = []
@@ -131,9 +207,9 @@ def analyze_event(title: str, description: str, event_type: str) -> dict:
         "long_term_impact": ai_impact,
         "knowledge_domains": interest_tags,
         "search_insight": "",
-        "encouragement": "",
-        "outlook": "",
-        "honest_reflection": "",
+        "encouragement": encouragement,
+        "outlook": outlook,
+        "honest_reflection": honest_reflection,
         "engine": "rule_based",
     }
 

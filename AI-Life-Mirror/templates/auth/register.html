@@ -24,6 +24,10 @@
                 <input type="text" name="username" class="input-field" placeholder="2-50个字符" required autofocus>
             </div>
             <div class="mb-4">
+                <label class="block text-sm text-gray-400 mb-2">真实姓名</label>
+                <input type="text" name="real_name" class="input-field" placeholder="用于组队协作时的身份识别">
+            </div>
+            <div class="mb-4">
                 <label class="block text-sm text-gray-400 mb-2">邮箱</label>
                 <input type="email" name="email" class="input-field" placeholder="your@email.com" required>
             </div>
@@ -31,9 +35,15 @@
                 <label class="block text-sm text-gray-400 mb-2">密码</label>
                 <input type="password" name="password" class="input-field" placeholder="至少6位" required>
             </div>
-            <div class="mb-6">
+            <div class="mb-4">
                 <label class="block text-sm text-gray-400 mb-2">确认密码</label>
                 <input type="password" name="confirm_password" class="input-field" placeholder="再次输入密码" required>
+            </div>
+            <div class="mb-4 flex items-start gap-2">
+                <input type="checkbox" name="agree_terms" value="1" class="mt-1 accent-indigo-500" required>
+                <span class="text-xs text-gray-500 leading-relaxed">
+                    我已阅读并同意 <a href="/legal/terms" target="_blank" class="text-indigo-400 hover:underline">用户协议</a> 和 <a href="/legal/privacy" target="_blank" class="text-indigo-400 hover:underline">隐私政策</a>
+                </span>
             </div>
             <button type="submit" class="btn-primary w-full py-3 rounded-xl text-white font-semibold">
                 注 册

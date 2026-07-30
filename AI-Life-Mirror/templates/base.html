@@ -25,6 +25,8 @@
     {% block head %}{% endblock %}
 </head>
 <body class="flex h-screen overflow-hidden">
+    {% set is_embedded = request.headers.get('sec-fetch-dest') == 'iframe' or request.query_params.get('embed') == '1' or request.headers.get('x-embedded') == '1' %}
+    {% if not is_embedded %}
     <!-- 侧边栏 -->
     <aside class="sidebar w-56 flex-shrink-0 flex flex-col">
         <div class="px-5 py-6 border-b border-white/5">
@@ -90,6 +92,7 @@
             </div>
         </div>
     </aside>
+    {% endif %}
 
     <!-- 主内容区 -->
     <main class="flex-1 overflow-y-auto">
@@ -114,6 +117,15 @@
 
     <script>
     (function() {
+        // ── iframe 兜底：JS 直接隐藏 sidebar（即使服务端漏了） ──
+        if (window.self !== window.top) {
+            var sidebar = document.querySelector('aside.sidebar');
+            if (sidebar) { sidebar.style.display = 'none'; }
+            // 主内容区占满宽度
+            var main = document.querySelector('main.flex-1');
+            if (main) { main.style.marginLeft = '0'; }
+        }
+
         const overlay = document.getElementById('loading-overlay');
 
         // ── 所有表单提交：显示 loading + 禁用按钮 ──
@@ -156,6 +168,42 @@
             if (!link) return;
             if (overlay) overlay.classList.remove('hidden');
         });
+
+        // ── iframe 模式：重写内部链接，防止跳出 /embed/ 代理 ──
+        const isEmbedded = window.self !== window.top;
+        if (isEmbedded) {
+            function rewriteUrl(url) {
+                if (!url || url.startsWith('#') || url.startsWith('javascript:') || url.startsWith('//') || url.startsWith('http://') || url.startsWith('https://')) return url;
+                if (url.startsWith('/embed/') || url.startsWith('/api/') || url.startsWith('/auth/') || url.startsWith('/mirror-static/') || url === '/track') return url;
+                if (url.startsWith('/')) return '/embed' + url;
+                return url;
+            }
+            // 拦截所有链接点击
+            document.addEventListener('click', function(e) {
+                var link = e.target.closest('a');
+                if (!link) return;
+                var href = link.getAttribute('href');
+                if (!href) return;
+                var rewritten = rewriteUrl(href);
+                if (rewritten !== href) {
+                    e.preventDefault();
+                    window.location.href = rewritten;
+                }
+            }, true);
+            // 拦截所有表单提交
+            document.addEventListener('submit', function(e) {
+                var form = e.target.closest('form');
+                if (!form) return;
+                var action = form.getAttribute('action');
+                if (!action) return;
+                var rewritten = rewriteUrl(action);
+                if (rewritten !== action) {
+                    e.preventDefault();
+                    form.setAttribute('action', rewritten);
+                    form.submit();
+                }
+            }, true);
+        }
     })();
     </script>
 </body>
