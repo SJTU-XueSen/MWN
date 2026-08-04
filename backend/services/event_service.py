@@ -280,7 +280,7 @@ async def get_event_by_id(db: AsyncSession, event_id: int) -> Optional[LifeEvent
 
 
 async def delete_event(db: AsyncSession, event: LifeEvent):
-    """删除事件及其关联记忆（含 ChromaDB 向量）"""
+    """删除事件及其关联记忆（含 ChromaDB 向量，精确删除）"""
     memories = (
         await db.execute(
             select(LifeMemory).where(
@@ -290,15 +290,18 @@ async def delete_event(db: AsyncSession, event: LifeEvent):
             )
         )
     ).scalars().all()
+    memory_ids = [m.id for m in memories]
     for m in memories:
         await db.delete(m)
     await db.delete(event)
     await db.commit()
 
+    # 精确删除该事件的向量（event:{id} + ai_memory:event:{id}），不误删其他事件
     try:
         from backend.services.vector_store import _get_collection
 
-        _get_collection().delete(where={"user_id": str(event.user_id), "type": "event"})
+        ids = [f"event:{event.id}"] + [f"ai_memory:{mid}" for mid in memory_ids]
+        _get_collection().delete(ids=ids)
     except Exception:
         pass
 

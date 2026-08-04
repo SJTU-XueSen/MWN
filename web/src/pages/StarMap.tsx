@@ -6,9 +6,9 @@ import { Link } from "react-router-dom";
  * 星星=记忆/事件/记录，大小=重要度，颜色=类型，连线=关联
  */
 const TYPE_COLORS: Record<string, string> = {
-  memory: "#E0B87C", // 琥珀金 — 生命记忆
-  event: "#D98A7A",  // 暖红 — 人生事件
-  record: "#8FBC9B", // 暖青绿 — 日常记录
+  memory: "#E8C07D", // 金 — 生命记忆
+  event: "#E8887E",  // 玫红 — 人生事件
+  record: "#86C5A8", // 青绿 — 日常记录
 };
 
 interface Node {
@@ -19,7 +19,19 @@ interface Link { source: string; target: string; weight: number; }
 
 export default function StarMap() {
   const [data, setData] = useState<{ nodes: Node[]; links: Link[]; stats: any } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
+
+  async function refresh() {
+    setRefreshing(true);
+    try {
+      const r = await fetch("/api/mirror/starmap", { credentials: "include" });
+      setData(await r.json());
+    } catch {
+    } finally {
+      setRefreshing(false);
+    }
+  }
   const [selected, setSelected] = useState<Node | null>(null);
   const [hovered, setHovered] = useState<Node | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -30,11 +42,23 @@ export default function StarMap() {
   useEffect(() => { hoveredRef.current = hovered; }, [hovered]);
   useEffect(() => { selectedRef.current = selected; }, [selected]);
 
+  // 加载星图数据；30s 轮询（数据有变化才更新，避免布局跳动）
   useEffect(() => {
-    fetch("/api/mirror/starmap", { credentials: "include" })
-      .then((r) => r.json())
-      .then(setData)
-      .catch(() => {});
+    let lastKey = "";
+    const load = () =>
+      fetch("/api/mirror/starmap", { credentials: "include" })
+        .then((r) => r.json())
+        .then((d) => {
+          const key = `${d?.stats?.nodes ?? 0}|${d?.stats?.links ?? 0}`;
+          if (key !== lastKey) {
+            lastKey = key;
+            setData(d);
+          }
+        })
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, 30000);
+    return () => clearInterval(timer);
   }, []);
 
   const filtered = useMemo(() => {
@@ -110,10 +134,13 @@ export default function StarMap() {
     }));
 
     let zoom = 1, panX = 0, panY = 0;
-    let dragging: string | null = null;
+    let dragging: string | null = null;   // 拖拽中的节点 id
+    let panning = false;                   // 空白处拖拽平移画布
+    let downX = 0, downY = 0, moved = false;
     let mouseX = 0, mouseY = 0;
 
-    const nodeRadius = (n: Node) => 4 + n.importance * 14;
+    // 非线性大小映射：重要度差异更明显（0.3→7px，0.95→26px）
+    const nodeRadius = (n: Node) => 5 + Math.pow(n.importance, 1.6) * 22;
 
     function hitTest(x: number, y: number): Node | null {
       const wx = (x - panX) / zoom, wy = (y - panY) / zoom;
@@ -173,32 +200,59 @@ export default function StarMap() {
         const dim = focusId && !isFocus && !isRelated;
 
         ctx.globalAlpha = dim ? 0.12 : 1;
-        // 发光
+        // 发光（大节点更亮）
         ctx.shadowColor = color;
-        ctx.shadowBlur = isFocus ? 26 : 12;
+        ctx.shadowBlur = isFocus ? 30 : 10 + r * 0.8;
         ctx.fillStyle = color;
         ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0;
         // 核心亮点
-        ctx.fillStyle = "rgba(255,255,255,0.85)";
-        ctx.beginPath(); ctx.arc(p.x - r * 0.25, p.y - r * 0.25, r * 0.32, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.beginPath(); ctx.arc(p.x - r * 0.25, p.y - r * 0.25, Math.max(1.2, r * 0.3), 0, Math.PI * 2); ctx.fill();
         // 选中/悬停外圈
         if (isFocus) {
-          ctx.strokeStyle = "rgba(255,255,255,0.7)";
-          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = "rgba(255,255,255,0.75)";
+          ctx.lineWidth = 1.3;
           ctx.beginPath(); ctx.arc(p.x, p.y, r + 5, 0, Math.PI * 2); ctx.stroke();
+        }
+        // 重要节点显示短标题（星图上能认出是哪颗星）
+        if (n.importance >= 0.75 && !dim) {
+          ctx.font = "10px 'PingFang SC', sans-serif";
+          ctx.fillStyle = "rgba(237,234,228,0.75)";
+          ctx.textAlign = "center";
+          const label = (n.title || n.content || "").slice(0, 12);
+          ctx.fillText(label, p.x, p.y - r - 6);
         }
         ctx.globalAlpha = 1;
       }
       ctx.restore();
     }
 
+    function onMouseDown(e: MouseEvent) {
+      const rect = canvas.getBoundingClientRect();
+      downX = e.clientX - rect.left; downY = e.clientY - rect.top;
+      moved = false;
+      const hit = hitTest(downX, downY);
+      if (hit) dragging = hit.id;
+      else panning = true;
+    }
+
     function onMouseMove(e: MouseEvent) {
       const rect = canvas.getBoundingClientRect();
       mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top;
       if (dragging) {
+        if (Math.abs(mouseX - downX) + Math.abs(mouseY - downY) > 4) moved = true;
         const p = pos.get(dragging);
         if (p) { p.x = (mouseX - panX) / zoom; p.y = (mouseY - panY) / zoom; }
+        draw();
+        return;
+      }
+      if (panning) {
+        if (Math.abs(mouseX - downX) + Math.abs(mouseY - downY) > 4) moved = true;
+        panX += mouseX - downX;
+        panY += mouseY - downY;
+        downX = mouseX; downY = mouseY;
+        draw();
         return;
       }
       const hit = hitTest(mouseX, mouseY);
@@ -206,21 +260,21 @@ export default function StarMap() {
       draw();
     }
 
-    function onClick() {
-      const hit = hitTest(mouseX, mouseY);
-      setSelected(hit || null);
+    function onMouseUp() {
+      if (dragging && !moved) {
+        // 未移动 = 点击 → 选中/取消
+        const hit = hitTest(mouseX, mouseY);
+        setSelected(hit || null);
+      }
+      dragging = null;
+      panning = false;
       draw();
     }
 
+    canvas.addEventListener("mousedown", onMouseDown);
     canvas.addEventListener("mousemove", onMouseMove);
-    canvas.addEventListener("mousedown", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
-      if (hit) dragging = hit.id;
-    });
-    canvas.addEventListener("mouseup", () => (dragging = null));
-    canvas.addEventListener("mouseleave", () => { dragging = null; setHovered(null); });
-    canvas.addEventListener("click", onClick);
+    canvas.addEventListener("mouseup", onMouseUp);
+    canvas.addEventListener("mouseleave", () => { dragging = null; panning = false; setHovered(null); });
     canvas.addEventListener("wheel", (e) => {
       e.preventDefault();
       zoom = Math.min(2.4, Math.max(0.5, zoom * (e.deltaY < 0 ? 1.08 : 0.93)));
@@ -244,8 +298,9 @@ export default function StarMap() {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
+      canvas.removeEventListener("mousedown", onMouseDown);
       canvas.removeEventListener("mousemove", onMouseMove);
-      canvas.removeEventListener("click", onClick);
+      canvas.removeEventListener("mouseup", onMouseUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, search]);
@@ -272,15 +327,28 @@ export default function StarMap() {
               : "正在汇聚你的人生数据..."}
           </p>
         </div>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜索记忆…"
-          style={{
-            background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)",
-            color: "#EDEAE4", borderRadius: 8, padding: "8px 14px", outline: "none", fontSize: "0.82rem", width: 220,
-          }}
-        />
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜索记忆…"
+            style={{
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)",
+              color: "#EDEAE4", borderRadius: 8, padding: "8px 14px", outline: "none", fontSize: "0.82rem", width: 220,
+            }}
+          />
+          <button
+            onClick={refresh}
+            disabled={refreshing}
+            style={{
+              background: "rgba(201,168,124,0.12)", border: "1px solid rgba(201,168,124,0.25)",
+              color: "#C9A87C", borderRadius: 8, padding: "8px 14px", cursor: "pointer",
+              fontSize: "0.78rem", fontWeight: 600,
+            }}
+          >
+            {refreshing ? "刷新中…" : "↻ 刷新"}
+          </button>
+        </div>
       </div>
 
       {/* 星图画布 */}

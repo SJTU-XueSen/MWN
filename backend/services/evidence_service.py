@@ -14,6 +14,50 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.models import DailyRecord, LifeEvent, LifeMemory
 
+# 抽象维度词 → 真实内容词展开（维度名在记忆原文中几乎不出现，
+# 必须映射到用户实际会写下的词，才能让各维度召回不同的真实证据）
+DIMENSION_EXPANSION: dict[str, list[str]] = {
+    "技术能力": ["技术", "工程", "代码", "开发", "编程", "实验", "调试", "算法", "机器人", "电路", "实现", "搭建"],
+    "创造力": ["创造", "设计", "创意", "创新", "灵感", "作品", "方案", "想法"],
+    "社交力": ["社交", "朋友", "团队", "合作", "交流", "分享", "社区", "同学", "队友", "讨论"],
+    "自我认知": ["反思", "认知", "思考", "自我", "总结", "复盘", "认识", "感悟", "习惯"],
+    "执行力": ["执行", "完成", "推进", "落地", "坚持", "行动"],
+    "领导力": ["领导", "组织", "带队", "负责", "管理"],
+    "学习能力": ["学习", "课程", "阅读", "论文", "笔记", "知识"],
+    "表达能力": ["表达", "演讲", "分享", "汇报", "讲解", "发言"],
+    "分析能力": ["分析", "研究", "调研", "理解", "拆解"],
+    "组织能力": ["组织", "协调", "策划", "安排", "筹备"],
+    "适应力": ["适应", "调整", "变化", "转变", "重新"],
+    "探索型": ["探索", "尝试", "发现", "新领域", "未知", "好奇"],
+    "坚持型": ["坚持", "持续", "努力", "克服", "不放弃"],
+    "社交型": ["交流", "分享", "团队", "协作", "帮助", "讨论"],
+    "创造型": ["创造", "构建", "设计", "制作", "创作", "开发"],
+    "反思型": ["反思", "总结", "复盘", "思考", "回顾", "分析"],
+    "探索": ["探索", "尝试", "发现", "新领域", "未知", "好奇"],
+    "坚持": ["坚持", "持续", "努力", "克服", "不放弃"],
+    "反思": ["反思", "总结", "复盘", "思考", "回顾", "分析"],
+    "成就": ["成就", "收获", "突破", "成功", "获奖", "进步"],
+    "求知": ["求知", "学习", "好奇", "阅读", "论文", "知识"],
+    "自主": ["自主", "独立", "自己决定", "选择"],
+    "认知": ["认知", "思考", "理解", "认识", "感悟"],
+    "独立": ["独立", "自己", "独自"],
+    "专注": ["专注", "沉浸", "集中", "认真"],
+    "抗压": ["压力", "高压", "坚持", "克服", "扛住"],
+}
+
+
+def _expand_query(query: str) -> list[str]:
+    """把 query 中的抽象维度词展开为真实内容词（匹配用）"""
+    expanded: list[str] = []
+    for word in query.replace("，", " ").replace("、", " ").split():
+        if not word:
+            continue
+        if word in DIMENSION_EXPANSION:
+            expanded.extend(DIMENSION_EXPANSION[word])
+        elif len(word) >= 2:
+            expanded.append(word)
+    return list(dict.fromkeys(expanded))  # 去重保序
+
 
 async def build_evidence(
     db: AsyncSession,
@@ -25,7 +69,7 @@ async def build_evidence(
 ) -> list[dict]:
     """召回证据列表（全部带 user_id 过滤）"""
     query = (query or "").strip()
-    keywords = [k for k in query.replace("，", " ").replace("、", " ").split() if len(k) >= 2] if query else []
+    keywords = _expand_query(query) if query else []
     evidence: list[dict] = []
 
     # ── 1. 生命记忆（最重要来源） ──
@@ -86,21 +130,27 @@ async def build_evidence(
         if len(evidence) >= limit:
             return _dedupe(evidence)
 
-    # ── 4. ChromaDB 语义补充（关键词命中不足时，按 query 拆词逐词检索） ──
-    if len(evidence) < limit and query:
+    # ── 4. ChromaDB 语义补充（关键词命中不足时，按展开词逐词检索） ──
+    if len(evidence) < limit and keywords:
         try:
             from backend.services.vector_store import search
 
-            # 拆出 2 字以上的查询词，逐词检索合并（各维度召回差异更大）
-            sub_queries = [q for q in re.split(r"[\s,，、]+", query) if len(q) >= 2]
-            if not sub_queries:
-                sub_queries = [query]
+            # 收集库中仍存在的来源 id（过滤已删除数据）
+            existing_ids: set = set()
+            for model, prefix in [(DailyRecord, "journal"), (LifeEvent, "event"), (LifeMemory, "ai_memory")]:
+                rows = (await db.execute(select(model.id).where(model.user_id == user_id))).scalars().all()
+                existing_ids.update(f"{prefix}:{i}" for i in rows)
             seen_snippets = {e["snippet"] for e in evidence}
-            for sq in sub_queries[:5]:
+            for sq in keywords[:6]:
                 if len(evidence) >= limit:
                     break
                 for r in search(user_id, sq, n_results=limit):
                     content = r.get("content", "")
+                    vid = str(r.get("id", ""))
+                    # 存在性校验：已删除来源的向量不进入证据链
+                    # （journal:{记录id} / event:{事件id} / ai_memory:{记忆id} 均须在库中存在）
+                    if vid and not vid.startswith(("report:", "chat:")) and vid not in existing_ids:
+                        continue
                     if content and content[:60] not in seen_snippets:
                         seen_snippets.add(content[:60])
                         evidence.append({

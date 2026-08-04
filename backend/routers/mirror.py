@@ -281,7 +281,17 @@ async def api_journal_delete(request: Request, record_id: int):
             await db.delete(m)
         await db.delete(record)
         await db.commit()
-        return JSONResponse({"ok": True})
+
+    # 清理 ChromaDB 向量（记录原文 + 提炼记忆），防止已删数据出现在证据链
+    try:
+        from backend.services.vector_store import _get_collection
+
+        ids = [f"journal:{record_id}"]
+        ids += [f"ai_memory:{m.id}" for m in memories]
+        _get_collection().delete(ids=ids)
+    except Exception:
+        pass
+    return JSONResponse({"ok": True})
 
 
 # ── 人生事件 ──────────────────────────────────────────
