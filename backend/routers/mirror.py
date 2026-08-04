@@ -81,8 +81,13 @@ async def api_dashboard(request: Request):
             {"id": g.id, "title": g.title or "", "importance": g.importance or 50, "period": g.target_period or ""}
             for g in data.get("active_goals", [])
         ]
+        stats = data.get("stats", {})
+        # 兼容两种统计字段命名（新页面用 record_count，叙事版仪表盘用 records）
+        stats.setdefault("records", stats.get("record_count", 0))
+        stats.setdefault("events", stats.get("event_count", 0))
+        stats.setdefault("goals", stats.get("goal_count", 0))
         return JSONResponse({
-            "stats": data.get("stats", {}),
+            "stats": stats,
             "persona": persona_dict,
             "insight": data.get("insight", ""),
             "recent_events": events_list,
@@ -90,7 +95,7 @@ async def api_dashboard(request: Request):
             "interests": dict(data.get("interests", {}) or {}),
             "activities": [
                 {"id": a.get("id"), "title": a.get("title"), "summary": (a.get("summary") or "")[:100],
-                 "date": a.get("publishDate", ""), "url": a.get("url", "")}
+                 "publishDate": a.get("publishDate", ""), "url": a.get("url", "")}
                 for a in activities
             ],
         })
@@ -353,6 +358,8 @@ def _persona_payload(p: PersonaProfile) -> dict:
         "ability": p.ability_profile, "interest": p.interest_profile,
         "value": p.value_profile, "decision": p.decision_style,
         "behavior": p.behavior_profile, "is_current": p.is_current,
+        "trigger_event": p.trigger_event,
+        "generated_at": p.generated_at.isoformat() if p.generated_at else None,
         "date": p.generated_at.strftime("%Y-%m-%d") if p.generated_at else "",
     }
 
@@ -413,6 +420,7 @@ async def api_simulations(request: Request):
         ).scalars().all()
         return JSONResponse([
             {"id": s.id, "scenario": s.scenario_type or "", "question": s.question, "paths": s.output_paths,
+             "created_at": s.created_at.isoformat() if s.created_at else "",
              "date": s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else "",
              "persona_snapshot_id": s.persona_snapshot_id}
             for s in sims

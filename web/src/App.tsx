@@ -38,6 +38,7 @@ import ChatPage from "./pages/ChatPage";
 import WorkPage from "./pages/WorkPage";
 import AiSearch from "./pages/AiSearch";
 import Memo from "./pages/Memo";
+import StudentActivity from "./pages/StudentActivity";
 import SettingsPage from "./pages/SettingsPage";
 import ReferencesPage from "./pages/ReferencesPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -213,6 +214,7 @@ function AppShell() {
           <Route path="/connections/work" element={<Protected><WorkPage /></Protected>} />
           <Route path="/ai-search" element={<Protected><AiSearch /></Protected>} />
           <Route path="/memo" element={<Protected><Memo /></Protected>} />
+          <Route path="/student-activity" element={<Protected><StudentActivity /></Protected>} />
           <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
           <Route path="/references" element={<Protected><ReferencesPage /></Protected>} />
           <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
