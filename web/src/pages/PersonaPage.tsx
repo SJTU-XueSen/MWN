@@ -94,6 +94,24 @@ export default function PersonaPage() {
                 { label: "决策", icon: "🧭", data: persona.decision_style || persona.decision || {}, color: "from-rose-500 to-pink-500" },
                 { label: "行为", icon: "🔄", data: persona.behavior_profile || persona.behavior || {}, color: "from-cyan-500 to-blue-500" },
               ].map((dim, i) => {
+                // 决策风格是文本结构（style/traits），特殊渲染
+                if (dim.label === "决策") {
+                  const ds = persona.decision_style || persona.decision || {};
+                  const styleText = ds.style || "";
+                  const traits: string[] = Array.isArray(ds.traits) ? ds.traits : [];
+                  return (
+                    <div key={dim.label} className="p-3 rounded-xl bg-white/5">
+                      <div className="text-lg mb-1">{dim.icon}</div>
+                      <div className="text-xs text-gray-500 mb-1">{dim.label}</div>
+                      <div className="text-xs font-semibold text-gray-300 leading-snug" style={{ minHeight: 28 }}>
+                        {styleText || (traits[0] || "数据积累中")}
+                      </div>
+                      {traits.length > 0 && (
+                        <div className="mt-1.5 text-[0.6rem] text-gray-500 leading-relaxed">{traits.slice(0, 2).join(" · ")}</div>
+                      )}
+                    </div>
+                  );
+                }
                 const vals = dim.data && typeof dim.data === 'object' && !Array.isArray(dim.data)
                   ? (Object.values(dim.data) as any[]).filter((v: any) => typeof v === 'number') as number[]
                   : [];
@@ -123,7 +141,7 @@ export default function PersonaPage() {
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                   <span></span> 能力画像
                   <span style={{ marginLeft: "auto" }}>
-                    <EvidenceButton query={"能力画像" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
+                    <EvidenceButton query={(Object.keys(persona.ability_profile || persona.ability || {}).join(" ")) + " " + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
                   </span>
                 </h4>
                 <div className="space-y-3">
@@ -149,7 +167,7 @@ export default function PersonaPage() {
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                   <span></span> 兴趣画像
                   <span style={{ marginLeft: "auto" }}>
-                    <EvidenceButton query={"兴趣画像" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
+                    <EvidenceButton query={(Object.keys(persona.interest_profile || persona.interest || {}).join(" ")) + " " + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
                   </span>
                 </h4>
                 <div className="space-y-3">
@@ -175,7 +193,7 @@ export default function PersonaPage() {
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                   <span></span> 价值观画像
                   <span style={{ marginLeft: "auto" }}>
-                    <EvidenceButton query={"价值观画像" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
+                    <EvidenceButton query={(Object.keys(persona.value_profile || persona.value || {}).join(" ")) + " " + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
                   </span>
                 </h4>
                 <div className="flex flex-wrap gap-2">
@@ -195,7 +213,7 @@ export default function PersonaPage() {
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                   <span></span> 决策风格
                   <span style={{ marginLeft: "auto" }}>
-                    <EvidenceButton query={"决策风格" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
+                    <EvidenceButton query={(Object.keys(persona.decision_style?.traits || persona.decision?.traits || {}).join(" ")) + " " + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
                   </span>
                 </h4>
                 {(persona.decision_style || persona.decision).style && (
@@ -217,7 +235,7 @@ export default function PersonaPage() {
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                   <span></span> 行为模式
                   <span style={{ marginLeft: "auto" }}>
-                    <EvidenceButton query={"行为模式" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
+                    <EvidenceButton query={(Object.keys(persona.behavior_profile || persona.behavior || {}).join(" ")) + " " + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
                   </span>
                 </h4>
                 <div className="space-y-3">

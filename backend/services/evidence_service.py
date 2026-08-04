@@ -1,3 +1,4 @@
+import re
 """证据链服务 — 为每个 AI 结论召回真实数据来源（数据铁律 1.3）
 
 从三类真实数据源召回证据：
@@ -85,22 +86,33 @@ async def build_evidence(
         if len(evidence) >= limit:
             return _dedupe(evidence)
 
-    # ── 4. ChromaDB 语义补充（无关键词命中时） ──
-    if not evidence and query:
+    # ── 4. ChromaDB 语义补充（关键词命中不足时，按 query 拆词逐词检索） ──
+    if len(evidence) < limit and query:
         try:
             from backend.services.vector_store import search
 
-            for r in search(user_id, query, n_results=limit):
-                content = r.get("content", "")
-                if content:
-                    evidence.append({
-                        "type": "memory",
-                        "title": "长期记忆",
-                        "snippet": content[:200],
-                        "date": "",
-                        "importance": 0.5,
-                        "source_id": None,
-                    })
+            # 拆出 2 字以上的查询词，逐词检索合并（各维度召回差异更大）
+            sub_queries = [q for q in re.split(r"[\s,，、]+", query) if len(q) >= 2]
+            if not sub_queries:
+                sub_queries = [query]
+            seen_snippets = {e["snippet"] for e in evidence}
+            for sq in sub_queries[:5]:
+                if len(evidence) >= limit:
+                    break
+                for r in search(user_id, sq, n_results=limit):
+                    content = r.get("content", "")
+                    if content and content[:60] not in seen_snippets:
+                        seen_snippets.add(content[:60])
+                        evidence.append({
+                            "type": "memory",
+                            "title": "长期记忆",
+                            "snippet": content[:200],
+                            "date": "",
+                            "importance": 0.5,
+                            "source_id": None,
+                        })
+                        if len(evidence) >= limit:
+                            break
         except Exception:
             pass
 
