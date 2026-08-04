@@ -7,6 +7,13 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [dsKey, setDsKey] = useState("");
   const [sttHotwords, setSttHotwords] = useState("");
+  const [theme, setTheme] = useState<string>(() => {
+    try {
+      return localStorage.getItem("theme") || "dark";
+    } catch {
+      return "dark";
+    }
+  });
 
   const load = () =>
     api("/api/mirror/settings").then((d) => {
@@ -65,6 +72,43 @@ export default function SettingsPage() {
     <div style={{ maxWidth: 700, margin: "0 auto", padding: "32px 24px" }}>
       <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 20 }}>设置</h1>
       {saved && <p style={{ color: "#34D399", fontSize: "0.8rem", marginBottom: 10 }}>已保存</p>}
+
+      {/* 外观 */}
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 12 }}>外观</h3>
+        <div style={{ display: "flex", gap: 10 }}>
+          {(["dark", "light"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => {
+                document.documentElement.setAttribute("data-theme", t);
+                try {
+                  localStorage.setItem("theme", t);
+                } catch {}
+                setTheme(t);
+                setSaved(true);
+                setTimeout(() => setSaved(false), 1500);
+              }}
+              style={{
+                flex: 1,
+                padding: "14px 0",
+                borderRadius: 10,
+                cursor: "pointer",
+                border: "1px solid",
+                borderColor: theme === t ? "var(--accent-border2)" : "var(--border)",
+                background: theme === t ? "var(--accent-bg3)" : "var(--surface2)",
+                color: theme === t ? "var(--accent)" : "var(--text3)",
+                fontWeight: 600,
+                fontSize: "0.85rem",
+              }}
+            >
+              {t === "dark" ? "🌙 深色" : "☀️ 浅色"}
+              {theme === t && " ✓"}
+            </button>
+          ))}
+        </div>
+        <p style={{ fontSize: "0.68rem", color: "var(--text4)", marginTop: 8 }}>深色为暖炭色，浅色为暖纸色——选择会保存在本地</p>
+      </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 12 }}>个人信息</h3>

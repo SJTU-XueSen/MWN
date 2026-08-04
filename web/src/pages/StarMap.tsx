@@ -24,6 +24,11 @@ export default function StarMap() {
   const [hovered, setHovered] = useState<Node | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  // ref 镜像：hover/选中只影响重绘，不触发力导向重新布局（否则节点会"跑"）
+  const hoveredRef = useRef<Node | null>(null);
+  const selectedRef = useRef<Node | null>(null);
+  useEffect(() => { hoveredRef.current = hovered; }, [hovered]);
+  useEffect(() => { selectedRef.current = selected; }, [selected]);
 
   useEffect(() => {
     fetch("/api/mirror/starmap", { credentials: "include" })
@@ -45,7 +50,7 @@ export default function StarMap() {
     };
   }, [data, search]);
 
-  // ── 力导向布局 + 渲染 ──
+  // ── 力导向布局 + 渲染（只随数据变化重建，hover/选中不触发重建） ──
   useEffect(() => {
     const canvas = canvasRef.current;
     const wrap = wrapRef.current;
@@ -143,7 +148,7 @@ export default function StarMap() {
       ctx.translate(panX, panY);
       ctx.scale(zoom, zoom);
 
-      const focusId = selected?.id || hovered?.id || null;
+      const focusId = selectedRef.current?.id || hoveredRef.current?.id || null;
 
       // 连线
       for (const l of filtered.links) {
@@ -243,7 +248,7 @@ export default function StarMap() {
       canvas.removeEventListener("click", onClick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, search, selected, hovered]);
+  }, [data, search]);
 
   const stats = data?.stats;
 
