@@ -8,7 +8,7 @@ const STATUS_MAP: Record<string, string> = {
 };
 
 export default function ConnectionsPage() {
-  const [tab, setTab] = useState<"activities" | "sjtu" | "pending" | "friends">("activities");
+  const [tab, setTab] = useState<"activities" | "competitions" | "sjtu" | "pending" | "friends">("activities");
   const [competitions, setCompetitions] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [levels, setLevels] = useState<string[]>([]);
@@ -42,7 +42,7 @@ export default function ConnectionsPage() {
   const [teamDesc, setTeamDesc] = useState("");
 
   const loadCompetitions = () =>
-    api(`/api/competitions?category=${filterCat}&level=${filterLevel}&search=${encodeURIComponent(search)}`)
+    api(`/api/competitions?category=${filterCat}&level=${filterLevel}&search=${encodeURIComponent(search)}&kind=${tab === "competitions" ? "competition" : "activity"}`)
       .then((d) => {
         setCompetitions(d.activities || []);
         setCategories(d.categories || []);
@@ -185,6 +185,7 @@ export default function ConnectionsPage() {
       <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
         {([
           ["activities", "组队活动"],
+          ["competitions", "🏆 竞赛信息"],
           ["sjtu", "SJTU 通知"],
           ["pending", "待审核"],
           ["friends", "潜在队友"],
@@ -224,19 +225,29 @@ export default function ConnectionsPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
             {competitions.length === 0 && (
               <div className="card" style={{ gridColumn: "1/-1", textAlign: "center", padding: 40, color: "var(--text4)", fontSize: "0.85rem" }}>
-                暂无活动——发布第一个，或触发爬虫获取 SJTU 通知
+                {tab === "competitions"
+                  ? "暂无竞赛信息——点击右上角「爬取 SJTU 活动」自动抓取 6 个站点并 AI 筛选竞赛"
+                  : "暂无活动——发布第一个，或触发爬虫获取 SJTU 通知"}
               </div>
             )}
             {competitions.map((c) => (
               <div key={c.id} className="card" style={{ display: "flex", flexDirection: "column", cursor: "pointer" }} onClick={() => openDetail(c.id)}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
                   <span className="badge" style={{ background: "var(--accent-bg)", color: "var(--accent)" }}>{c.category || "未分类"}</span>
                   <span className="badge" style={{ background: "var(--surface2)", color: "var(--text4)" }}>{c.level || "校级"}</span>
+                  {tab === "competitions" && (
+                    <>
+                      <span className="badge" style={{ background: "rgba(52,211,153,0.15)", color: "#34D399" }}>
+                        AI 识别 {(c.ai_confidence * 100).toFixed(0)}%
+                      </span>
+                      {c.source_site && <span className="badge" style={{ background: "var(--surface2)", color: "var(--text4)" }}>{c.source_site.slice(0, 12)}</span>}
+                    </>
+                  )}
                 </div>
                 <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6 }}>{c.title}</h3>
                 <p style={{ fontSize: "0.78rem", color: "var(--text3)", lineHeight: 1.6, flex: 1 }}>{c.description}</p>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, fontSize: "0.72rem", color: "var(--text4)" }}>
-                  <span>{c.team_count} 支战队</span>
+                  <span>{tab === "competitions" ? "查看详情并组队" : `${c.team_count} 支战队`}</span>
                   {c.registration_deadline && <span>截止 {c.registration_deadline}</span>}
                 </div>
               </div>

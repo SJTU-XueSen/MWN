@@ -24,16 +24,26 @@ def _competition_list_item(c: Competition, team_count: int) -> dict:
         "registration_deadline": _fmt_date(c.registration_deadline),
         "credit_info": c.credit_info, "tags": c.tags or [],
         "team_count": team_count, "created_at": _fmt_date(c.created_at),
+        "is_competition": c.is_competition,
+        "source_site": c.source_site or "",
+        "ai_confidence": c.ai_confidence or 0.0,
+        "publisher_type": c.publisher_type,
     }
 
 
 @router.get("/competitions")
-async def api_competitions(request: Request, category: str = "", level: str = "", search: str = ""):
+async def api_competitions(request: Request, category: str = "", level: str = "", search: str = "", kind: str = "activity"):
+    """活动列表
+
+    kind: activity=组队活动（默认，is_competition=False）
+          competition=竞赛信息（is_competition=True）
+    """
     uid = require_uid(request)
     async with AsyncSessionLocal() as db:
+        is_comp = kind == "competition"
         q = select(Competition).where(
             Competition.approval_status == "approved",
-            Competition.is_competition == False,
+            Competition.is_competition == is_comp,
             Competition.status == "active",
         )
         if category:
@@ -63,6 +73,7 @@ async def api_competitions(request: Request, category: str = "", level: str = ""
             "activities": [_competition_list_item(c, counts.get(c.id, 0)) for c in comps],
             "categories": categories,
             "levels": levels,
+            "kind": kind,
         })
 
 

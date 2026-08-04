@@ -67,16 +67,12 @@ async def do_scrape() -> dict:
                 continue
             if result.get("source_url") in existing_urls:
                 continue
-            # ── 优化筛选机制：剔除非学生可参与内容 ──
-            # 1) 纯竞赛（is_competition=True）→ 由 SJTU 通知 tab 承接，不进入组队活动库
-            if result.get("is_competition") is True:
-                ai_filtered += 1
-                continue
-            # 2) 学生无需主动参与（needs_participation=False，如纯通知/讲座）
+            # ── 筛选机制：只剔除无效内容 ──
+            # 1) 学生无需主动参与（needs_participation=False，如纯通知/讲座）
             if result.get("needs_participation") is False:
                 ai_filtered += 1
                 continue
-            # 3) 已过报名截止
+            # 2) 已过报名截止
             if result.get("deadline"):
                 try:
                     dl = datetime.fromisoformat(result["deadline"])
@@ -85,6 +81,9 @@ async def do_scrape() -> dict:
                         continue
                 except Exception:
                     pass
+            # 3) 规则引擎兜底路径无 is_competition 标记：按关键词判断
+            #    竞赛（is_competition=True）入库后由「竞赛」tab 播报，
+            #    组队活动（False）由活动大厅展示——两条通道都保留
             deadline = None
             if result.get("deadline"):
                 try:
@@ -110,7 +109,8 @@ async def do_scrape() -> dict:
                 approval_status="approved",
                 publisher_type="scraped",
                 publisher_name=result.get("source_site", "爬虫"),
-                is_competition=True,
+                # 使用 AI 判定：学科竞赛/创新创业类 → 竞赛通道；活动类 → 组队活动通道
+                is_competition=bool(result.get("is_competition", False)),
             )
             db.add(comp)
             existing_urls.add(comp.source_url)

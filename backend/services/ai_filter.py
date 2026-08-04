@@ -277,6 +277,9 @@ def analyze_competition_page(title, url, source, detail_text):
         "min_team_size": min_size,
         "source_url": url,
         "source_site": source or "上海交通大学",
+        # 规则路径补充标记：学科竞赛/创新创业 → 竞赛通道
+        "is_competition": category in ("学科竞赛", "创新创业"),
+        "needs_participation": True,
     }
 
 
