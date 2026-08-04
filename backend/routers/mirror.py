@@ -1356,6 +1356,137 @@ async def api_evidence(request: Request):
         return JSONResponse({"evidence": evidence, "count": len(evidence)})
 
 
+# ── 记忆星图（人生数据整体可视化）────────────────────
+
+@router.get("/starmap")
+async def api_starmap(request: Request):
+    """返回星图数据：记忆/事件/记录节点 + 关联边（全部 user_id 过滤）"""
+    uid = require_uid(request)
+    async with AsyncSessionLocal() as db:
+        # ── 节点收集 ──
+        memories = (
+            await db.execute(
+                select(LifeMemory).where(LifeMemory.user_id == uid)
+                .order_by(LifeMemory.importance_score.desc()).limit(15)
+            )
+        ).scalars().all()
+        events = (
+            await db.execute(
+                select(LifeEvent).where(LifeEvent.user_id == uid)
+                .order_by(LifeEvent.occurred_at.desc()).limit(12)
+            )
+        ).scalars().all()
+        records = (
+            await db.execute(
+                select(DailyRecord).where(DailyRecord.user_id == uid)
+                .order_by(DailyRecord.record_date.desc()).limit(12)
+            )
+        ).scalars().all()
+
+        nodes: list[dict] = []
+        node_by_key: dict = {}
+        for m in memories:
+            key = f"memory:{m.id}"
+            node = {
+                "id": key, "type": "memory",
+                "title": (m.memory_content or "")[:40],
+                "content": m.memory_content or "",
+                "importance": round(m.importance_score or 0.5, 2),
+                "date": m.created_at.strftime("%Y-%m-%d") if m.created_at else "",
+                "source_id": m.source_id, "source_type": m.source_type,
+            }
+            nodes.append(node)
+            node_by_key[key] = node
+        for e in events:
+            key = f"event:{e.id}"
+            node = {
+                "id": key, "type": "event",
+                "title": e.title or "",
+                "content": e.description or e.title or "",
+                "importance": 0.75,
+                "date": e.occurred_at.strftime("%Y-%m-%d") if e.occurred_at else "",
+                "source_id": e.id, "source_type": "event",
+            }
+            nodes.append(node)
+            node_by_key[key] = node
+        for r in records:
+            key = f"record:{r.id}"
+            node = {
+                "id": key, "type": "record",
+                "title": (r.content or "")[:40],
+                "content": r.content or "",
+                "importance": 0.55,
+                "date": r.record_date.strftime("%Y-%m-%d") if r.record_date else "",
+                "source_id": r.id, "source_type": "record",
+            }
+            nodes.append(node)
+            node_by_key[key] = node
+
+        # ── 关联边 ──
+        import re as _re
+
+        links: list[dict] = []
+        seen_edges: set = set()
+
+        def _add_edge(a: str, b: str, weight: float):
+            key = tuple(sorted([a, b]))
+            if key in seen_edges:
+                return
+            seen_edges.add(key)
+            links.append({"source": a, "target": b, "weight": weight})
+
+        # 1) 记忆 ↔ 来源（事件/记录）
+        for key, node in node_by_key.items():
+            if node["type"] == "memory" and node.get("source_id"):
+                src_key = f"{node['source_type']}:{node['source_id']}"
+                if src_key in node_by_key:
+                    _add_edge(key, src_key, 0.9)
+
+        # 2) 时间邻近（同年同月的事件/记录互相连）
+        time_buckets: dict = {}
+        for key, node in node_by_key.items():
+            if node["type"] == "event":
+                month = node["date"][:7]
+                time_buckets.setdefault(month, []).append(key)
+        for month, keys in time_buckets.items():
+            for i in range(len(keys) - 1):
+                _add_edge(keys[i], keys[i + 1], 0.5)
+
+        # 3) 关键词共现（2-gram 特征，共享 ≥2 个双字组连边，k-NN 每节点最多 4 条）
+        def _words(text: str) -> set:
+            grams: set = set()
+            for seg in _re.split(r"[\s，。、！？；：,.!?;:（）()「」]+", text or ""):
+                seg = seg.strip()
+                if len(seg) == 1:
+                    continue
+                if len(seg) <= 4:
+                    grams.add(seg)
+                else:
+                    for i in range(len(seg) - 1):
+                        grams.add(seg[i:i + 2])
+            return grams
+
+        node_texts = {key: _words(node["content"]) for key, node in node_by_key.items()}
+        link_count: dict = {}
+        keys_list = list(node_by_key.keys())
+        for i, a in enumerate(keys_list):
+            for b in keys_list[i + 1:]:
+                if link_count.get(a, 0) >= 4 or link_count.get(b, 0) >= 4:
+                    continue
+                shared = node_texts[a] & node_texts[b]
+                if len(shared) >= 2:
+                    _add_edge(a, b, min(0.7, 0.3 + 0.08 * len(shared)))
+                    link_count[a] = link_count.get(a, 0) + 1
+                    link_count[b] = link_count.get(b, 0) + 1
+
+        return JSONResponse({
+            "nodes": nodes,
+            "links": links,
+            "stats": {"nodes": len(nodes), "links": len(links),
+                      "memories": len(memories), "events": len(events), "records": len(records)},
+        })
+
+
 # ── 人生参考 ──────────────────────────────────────────
 
 @router.get("/references")

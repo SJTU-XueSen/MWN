@@ -13,6 +13,7 @@ import {
   PenLine,
   Search,
   Settings,
+  Sparkles,
   StickyNote,
   Target,
   Telescope,
@@ -43,6 +44,7 @@ import StudentActivity from "./pages/StudentActivity";
 import SettingsPage from "./pages/SettingsPage";
 import ReferencesPage from "./pages/ReferencesPage";
 import ProfilePage from "./pages/ProfilePage";
+import StarMap from "./pages/StarMap";
 import Login from "./pages/Login";
 import NotificationBell from "./components/NotificationBell";
 
@@ -96,6 +98,7 @@ function Sidebar() {
         <NavLink to="/journal" style={s(a("/journal"))}><PenLine size={15} />日常记录</NavLink>
         <NavLink to="/events" style={s(a("/events"))}><Map size={15} />人生地图</NavLink>
         <NavLink to="/persona" style={s(a("/persona"))}><Fingerprint size={15} />数字人格</NavLink>
+        <NavLink to="/starmap" style={s(a("/starmap"))}><Sparkles size={15} />记忆星图</NavLink>
         <NavLink to="/simulation" style={s(a("/simulation"))}><FlaskConical size={15} />人生模拟</NavLink>
         <NavLink to="/projection" style={s(a("/projection"))}><Telescope size={15} />推演人生</NavLink>
         <NavLink to="/future-chat" style={s(a("/future-chat"))}><MessageCircle size={15} />未来对话</NavLink>
@@ -208,6 +211,7 @@ function AppShell() {
           <Route path="/events" element={<Protected><EventsPage /></Protected>} />
           <Route path="/events/:id" element={<Protected><EventDetail /></Protected>} />
           <Route path="/persona" element={<Protected><PersonaPage /></Protected>} />
+          <Route path="/starmap" element={<Protected><StarMap /></Protected>} />
           <Route path="/simulation" element={<Protected><SimulationPage /></Protected>} />
           <Route path="/simulation/:id" element={<Protected><SimulationDetail /></Protected>} />
           <Route path="/projection" element={<Protected><ProjectionPage /></Protected>} />
