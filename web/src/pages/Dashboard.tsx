@@ -215,12 +215,17 @@ export default function Dashboard() {
     <main style={{ padding: "28px 40px 48px", minHeight: "100vh", maxWidth: 860, margin: "0 auto" }}>
 
       {/* ═══ Header ═══ */}
-      <div style={{ textAlign: "center", marginBottom: 36 }}>
-        <p style={{ fontSize: "0.7rem", color: "var(--text4)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 4 }}>
-          认识自己 · 走向世界 · 与他人共同创造
+      <div style={{ textAlign: "center", marginBottom: 40 }}>
+        <p style={{
+          display: "inline-block", padding: "3px 12px", borderRadius: 999, fontSize: "0.6rem",
+          fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase",
+          color: "var(--accent)", background: "var(--accent-bg)", border: "1px solid var(--accent-border)",
+          marginBottom: 16,
+        }}>
+          Mirror · World · Nexus
         </p>
-        {name && <h1 style={{ fontSize: "1.35rem", fontWeight: 700, marginBottom: 4, color: "var(--text)" }}>{name}，这是你的镜像</h1>}
-        <p style={{ fontSize: "0.8rem", color: "var(--text4)" }}>
+        {name && <h1 style={{ fontSize: "1.8rem", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6, color: "var(--text)" }}>{name}，这是你的镜像</h1>}
+        <p style={{ fontSize: "0.84rem", color: "var(--text4)", maxWidth: 560, margin: "0 auto", lineHeight: 1.7 }}>
           {hasPersona ? "所有内容来自你的真实经历——AI 只是把它重新组织，让你看清自己" : "记录你的第一段经历，AI 将开始为你构建镜像"}
         </p>
       </div>

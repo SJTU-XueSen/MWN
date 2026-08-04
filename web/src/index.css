@@ -1,43 +1,5 @@
-/* ═══ 深色主题（默认） — 单一强调色，无渐变，无 AI 味 ═══ */
+/* ═══ 浅色主题（默认） — 暖纸色编辑风，非 AI 深蓝 ═══ */
 :root {
-  --bg: #101016;
-  --bg2: #101016;
-  --surface: #16161d;
-  --surface2: #1c1c24;
-  --surface3: #22222c;
-  --border: #26262f;
-  --border-hover: #34343f;
-  --text: #E8E8EE;
-  --text2: #C6C6D0;
-  --text3: #8E8E9C;
-  --text4: #62626F;
-  --accent: #8FA3F2;
-  --accent2: #6E84E8;
-  --accent-bg: rgba(143, 163, 242, 0.08);
-  --accent-bg2: rgba(143, 163, 242, 0.04);
-  --accent-bg3: rgba(143, 163, 242, 0.14);
-  --accent-border: rgba(143, 163, 242, 0.16);
-  --accent-border2: rgba(143, 163, 242, 0.24);
-  --sidebar-bg: #0d0d12;
-  --sidebar-border: #1f1f28;
-  --input-bg: #1a1a22;
-  --input-border: #2c2c36;
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --btn-bg: #6E84E8;
-  --btn-hover: #7D91EC;
-  --btn-shadow: 0 2px 8px rgba(110, 132, 232, 0.25);
-  --scrollbar: rgba(255, 255, 255, 0.12);
-  --overlay: rgba(13, 13, 18, 0.86);
-  --bar-high: #8FA3F2;
-  --bar-mid: #6E84E8;
-  --bar-low: #4A5BB8;
-  --danger: #E58A8A;
-  --success: #7FBF9A;
-  --warning: #D9B36A;
-}
-
-/* ═══ 浅色主题 — 暖纸色编辑风 ═══ */
-[data-theme="light"] {
   --bg: #F7F5F1;
   --bg2: #F7F5F1;
   --surface: #FFFFFF;
@@ -72,6 +34,46 @@
   --danger: #B5543F;
   --success: #5F8A6E;
   --warning: #9A7B2E;
+  --sidebar-active-bg: rgba(138, 109, 79, 0.1);
+}
+
+/* ═══ 深色主题（可选）— 暖炭色，非 AI 深蓝 ═══ */
+[data-theme="dark"] {
+  --bg: #141311;
+  --bg2: #141311;
+  --surface: #1B1A17;
+  --surface2: #22211D;
+  --surface3: #2A2924;
+  --border: #302E29;
+  --border-hover: #403D36;
+  --text: #EDEAE4;
+  --text2: #CFCBC2;
+  --text3: #97917F;
+  --text4: #6E695C;
+  --accent: #C9A87C;
+  --accent2: #B08D5F;
+  --accent-bg: rgba(201, 168, 124, 0.09);
+  --accent-bg2: rgba(201, 168, 124, 0.05);
+  --accent-bg3: rgba(201, 168, 124, 0.15);
+  --accent-border: rgba(201, 168, 124, 0.18);
+  --accent-border2: rgba(201, 168, 124, 0.28);
+  --sidebar-bg: #100F0D;
+  --sidebar-border: #262420;
+  --input-bg: #201F1B;
+  --input-border: #37342E;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --btn-bg: #B08D5F;
+  --btn-hover: #C29F70;
+  --btn-shadow: 0 2px 8px rgba(176, 141, 95, 0.3);
+  --scrollbar: rgba(255, 255, 255, 0.12);
+  --overlay: rgba(16, 15, 13, 0.86);
+  --bar-high: #C9A87C;
+  --bar-mid: #B08D5F;
+  --bar-low: #8A6D4F;
+  --danger: #D98A7A;
+  --success: #8FBC9B;
+  --warning: #D4B16B;
+  --sidebar-active-bg: rgba(201, 168, 124, 0.12);
 }
 
 /* ═══ 浅色模式下 Tailwind 深色类覆盖 ═══ */
@@ -108,6 +110,35 @@
 [data-theme="light"] .border-indigo-500\/10 { border-color: rgba(138, 109, 79, 0.1) !important; }
 [data-theme="light"] .hover\:text-indigo-400:hover,
 [data-theme="light"] .hover\:text-gray-300:hover { color: #6B665D !important; }
+
+/* ── 补充：原版页面残留的 indigo/purple/emerald/amber/rose 变体 → 暖色系 ── */
+[data-theme="light"] .text-indigo-300,
+[data-theme="light"] .text-purple-300,
+[data-theme="light"] .text-violet-400 { color: #8A6D4F !important; }
+[data-theme="light"] .bg-indigo-500\/8,
+[data-theme="light"] .bg-indigo-500\/10,
+[data-theme="light"] .bg-purple-500\/10,
+[data-theme="light"] .bg-purple-500\/8 { background: rgba(138, 109, 79, 0.08) !important; }
+[data-theme="light"] .bg-indigo-500\/25,
+[data-theme="light"] .bg-purple-500\/25 { background: rgba(138, 109, 79, 0.14) !important; }
+[data-theme="light"] .border-indigo-500\/30,
+[data-theme="light"] .border-purple-500\/30 { border-color: rgba(138, 109, 79, 0.25) !important; }
+[data-theme="light"] .from-indigo-500\/8,
+[data-theme="light"] .from-purple-500\/8,
+[data-theme="light"] .from-indigo-500\/10,
+[data-theme="light"] .from-purple-500\/10 { --tw-gradient-from: rgba(138, 109, 79, 0.08); }
+[data-theme="light"] .from-emerald-500\/5,
+[data-theme="light"] .from-emerald-500\/8 { --tw-gradient-from: rgba(95, 138, 110, 0.06); }
+[data-theme="light"] .to-teal-500\/5 { --tw-gradient-to: rgba(95, 138, 110, 0.03); }
+[data-theme="light"] .bg-amber-500\/5,
+[data-theme="light"] .bg-amber-500\/10 { background: rgba(154, 123, 46, 0.08) !important; }
+[data-theme="light"] .border-amber-500\/10,
+[data-theme="light"] .border-amber-500\/20 { border-color: rgba(154, 123, 46, 0.15) !important; }
+[data-theme="light"] .border-emerald-500\/20 { border-color: rgba(95, 138, 110, 0.18) !important; }
+[data-theme="light"] .hover\:bg-indigo-500\/10:hover,
+[data-theme="light"] .hover\:bg-purple-500\/10:hover { background: rgba(138, 109, 79, 0.1) !important; }
+[data-theme="light"] .hover\:bg-rose-500\/10:hover { background: rgba(181, 84, 63, 0.08) !important; }
+[data-theme="light"] .hover\:border-rose-500\/20:hover { border-color: rgba(181, 84, 63, 0.18) !important; }
 [data-theme="light"] .from-indigo-500\/5,
 [data-theme="light"] .from-indigo-500\/8,
 [data-theme="light"] .from-purple-500\/5,

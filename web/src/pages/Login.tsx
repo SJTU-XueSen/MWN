@@ -139,10 +139,18 @@ export default function Login() {
         </div>
       )}
 
-      <div className="card" style={{ width: 400, padding: 32 }}>
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h1 style={{ fontSize: "1.3rem", fontWeight: 700 }}>镜·界·联</h1>
-          <p style={{ fontSize: "0.75rem", color: "var(--text4)", marginTop: 4 }}>认识自己 · 走向世界 · 与他人共同创造</p>
+      <div className="card" style={{ width: 420, padding: 36 }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <p style={{
+            display: "inline-block", padding: "3px 12px", borderRadius: 999, fontSize: "0.62rem",
+            fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase",
+            color: "var(--accent)", background: "var(--accent-bg)", border: "1px solid var(--accent-border)",
+            marginBottom: 14,
+          }}>
+            Mirror · World · Nexus
+          </p>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.01em" }}>镜·界·联</h1>
+          <p style={{ fontSize: "0.78rem", color: "var(--text4)", marginTop: 6 }}>认识自己 · 走向世界 · 与他人共同创造</p>
         </div>
 
         <div style={{ display: "flex", marginBottom: 20, borderRadius: 10, overflow: "hidden", border: "1px solid var(--border)" }}>
