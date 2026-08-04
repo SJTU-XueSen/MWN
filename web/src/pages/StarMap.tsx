@@ -5,15 +5,31 @@ import { Link } from "react-router-dom";
  * 记忆星图 — 把人生数据可视化为星空
  * 星星=记忆/事件/记录，大小=重要度，颜色=类型，连线=关联
  */
-const TYPE_COLORS: Record<string, string> = {
-  memory: "#E8C07D", // 金 — 生命记忆
-  event: "#E8887E",  // 玫红 — 人生事件
-  record: "#86C5A8", // 青绿 — 日常记录
+// 类型基色（HSL）：色相 = 类型；饱和度/亮度由「情绪 × 长期影响」动态调整
+const TYPE_HSL: Record<string, { h: number; s: number; l: number }> = {
+  memory: { h: 42, s: 78, l: 60 },   // 金 — 生命记忆
+  event: { h: 6, s: 72, l: 62 },     // 玫红 — 人生事件
+  record: { h: 158, s: 55, l: 55 },  // 青绿 — 日常记录
 };
+
+/**
+ * 动态分色：类型定色相；长期影响（lasting）越高越亮越饱和，
+ * 消极情绪偏冷偏暗；记忆点被后来的生活反复回响 → 颜色逐渐变亮。
+ */
+function nodeColor(n: Node): string {
+  const base = TYPE_HSL[n.type] || TYPE_HSL.memory;
+  const lasting = typeof n.lasting === "number" ? n.lasting : 0.5;
+  const neg = n.emotion === "negative";
+  const s = Math.min(100, base.s * (0.5 + 0.55 * lasting) * (neg ? 0.72 : 1));
+  const l = Math.min(90, base.l * (0.42 + 0.68 * lasting) * (neg ? 0.82 : 1));
+  return `hsl(${base.h}, ${s.toFixed(0)}%, ${l.toFixed(0)}%)`;
+}
 
 interface Node {
   id: string; type: string; title: string; content: string;
   importance: number; date: string; source_id?: number;
+  emotion?: "positive" | "negative" | "neutral";
+  lasting?: number;  // 长期影响 0-1（被后来生活回响的程度）
 }
 interface Link { source: string; target: string; weight: number; }
 
@@ -191,7 +207,7 @@ export default function StarMap() {
       for (const n of filtered.nodes) {
         const p = pos.get(n.id);
         if (!p) continue;
-        const color = TYPE_COLORS[n.type] || "#C9A87C";
+        const color = nodeColor(n);
         const r = nodeRadius(n);
         const isFocus = focusId === n.id;
         const isRelated = focusId && !isFocus && filtered.links.some(
@@ -412,14 +428,15 @@ export default function StarMap() {
       </div>
 
       {/* 图例 */}
-      <div style={{ display: "flex", gap: 18, marginTop: 14, justifyContent: "center" }}>
+      <div style={{ display: "flex", gap: 18, marginTop: 14, justifyContent: "center", flexWrap: "wrap" }}>
         {[["memory", "生命记忆"], ["event", "人生事件"], ["record", "日常记录"]].map(([t, label]) => (
           <span key={t} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem", color: "#97917F" }}>
-            <span style={{ width: 10, height: 10, borderRadius: "50%", background: TYPE_COLORS[t], boxShadow: `0 0 8px ${TYPE_COLORS[t]}` }} />
+            <span style={{ width: 10, height: 10, borderRadius: "50%", background: nodeColor({ type: t } as Node), boxShadow: "0 0 8px rgba(255,255,255,0.3)" }} />
             {label}
           </span>
         ))}
-        <span style={{ fontSize: "0.72rem", color: "#6E695C" }}>· 拖拽节点 / 滚轮缩放 / 点击查看详情</span>
+        <span style={{ fontSize: "0.72rem", color: "#6E695C" }}>· 亮度 = 该记忆点被后来生活反复回响的程度（颜色随人生演化）</span>
+        <span style={{ fontSize: "0.72rem", color: "#6E695C" }}>· 空白拖拽平移 / 节点拖拽 / 滚轮缩放 / 点击查看</span>
       </div>
     </div>
   );

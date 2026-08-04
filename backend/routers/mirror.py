@@ -1393,6 +1393,20 @@ async def api_starmap(request: Request):
             )
         ).scalars().all()
 
+        # 记录 → 情绪（供节点分色）
+        record_emotion: dict = {}
+        for r in records:
+            ana = r.ai_analysis or {}
+            record_emotion[r.id] = ana.get("emotion", "neutral") or "neutral"
+        event_emotion = {e.id: e.emotion or "neutral" for e in events}
+        # 记忆的情绪由其来源推断
+        def _memory_emotion(m) -> str:
+            if m.source_type == "diary":
+                return record_emotion.get(m.source_id, "neutral")
+            if m.source_type == "event":
+                return event_emotion.get(m.source_id, "neutral")
+            return "neutral"
+
         nodes: list[dict] = []
         node_by_key: dict = {}
         for m in memories:
@@ -1404,6 +1418,8 @@ async def api_starmap(request: Request):
                 "importance": round(m.importance_score or 0.5, 2),
                 "date": m.created_at.strftime("%Y-%m-%d") if m.created_at else "",
                 "source_id": m.source_id, "source_type": m.source_type,
+                "emotion": _memory_emotion(m),
+                "lasting": round(min(1.0, (m.importance_score or 0.5) * 0.85 + 0.1), 2),
             }
             nodes.append(node)
             node_by_key[key] = node
@@ -1413,9 +1429,11 @@ async def api_starmap(request: Request):
                 "id": key, "type": "event",
                 "title": e.title or "",
                 "content": e.description or e.title or "",
-                "importance": 0.75,
+                "importance": 0.78,
                 "date": e.occurred_at.strftime("%Y-%m-%d") if e.occurred_at else "",
                 "source_id": e.id, "source_type": "event",
+                "emotion": event_emotion.get(e.id, "neutral"),
+                "lasting": 0.8,  # 事件默认高长期影响，后续按关联频率调整
             }
             nodes.append(node)
             node_by_key[key] = node
@@ -1428,9 +1446,47 @@ async def api_starmap(request: Request):
                 "importance": 0.55,
                 "date": r.record_date.strftime("%Y-%m-%d") if r.record_date else "",
                 "source_id": r.id, "source_type": "record",
+                "emotion": record_emotion.get(r.id, "neutral"),
+                "lasting": 0.4,
             }
             nodes.append(node)
             node_by_key[key] = node
+
+        # ── 长期影响动态计算：该节点主题在「后来的记录」中被反复提及的程度
+        #    （后来的生活越频繁回响某个记忆点，它的颜色越亮——颜色随生活演化） ──
+        import re as _re
+
+        def _grams(text: str) -> set:
+            grams: set = set()
+            for seg in _re.split(r"[\s，。、！？；：,.!?;:（）()「」]+", text or ""):
+                seg = seg.strip()
+                if len(seg) == 1:
+                    continue
+                if len(seg) <= 4:
+                    grams.add(seg)
+                else:
+                    for i in range(len(seg) - 1):
+                        grams.add(seg[i:i + 2])
+            return grams
+
+        dated_nodes = sorted(
+            [(node["date"], node) for node in nodes if node["date"]],
+            key=lambda x: x[0],
+        )
+        # 对每个节点，统计其主题（2-gram）在其后所有节点中的出现次数
+        for i, (d1, node) in enumerate(dated_nodes):
+            node_grams = _grams(node["content"])
+            if not node_grams:
+                continue
+            echo = 0
+            for d2, later in dated_nodes[i + 1:]:
+                if later["type"] == node["type"] and later["id"] == node["id"]:
+                    continue
+                shared = node_grams & _grams(later["content"])
+                if shared:
+                    echo += min(len(shared), 3)
+            # lasting = 基础重要度 × 0.6 + 后续回响 × 0.4（回响越多颜色越亮）
+            node["lasting"] = round(min(1.0, node.get("lasting", 0.5) * 0.6 + min(echo, 6) * 0.07), 2)
 
         # ── 关联边 ──
         import re as _re
