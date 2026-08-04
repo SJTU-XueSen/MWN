@@ -10,9 +10,13 @@ export default function Journal() {
   const [recordDate, setRecordDate] = useState(new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
   const nav = useNavigate();
 
-  const load = () => fetch("/api/mirror/journal").then(r => r.json()).then(setRecords);
+  const load = (kw?: string) =>
+    fetch(`/api/mirror/journal${kw ? `?search=${encodeURIComponent(kw)}` : ""}`)
+      .then(r => r.json())
+      .then((d) => setRecords(Array.isArray(d) ? d : []));
   useEffect(() => { load(); }, []);
 
   function startEdit(r: any) {
@@ -61,10 +65,24 @@ export default function Journal() {
           <h2 className="text-2xl font-bold">日常人生记录</h2>
           <p className="#475569 text-sm mt-1">记录每一天的经历、心情和思考，AI 会帮你发现其中的成长轨迹</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn text-white px-5 py-2.5 rounded-xl text-sm font-semibold">
-          <i className="fa-solid fa-plus mr-2"></i>写记录
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            className="input"
+            style={{ width: 220 }}
+            placeholder="检索日记…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && load(search.trim())}
+          />
+          <button onClick={() => load(search.trim())} className="btn-ghost" style={{ padding: "8px 16px" }}>检索</button>
+        </div>
       </div>
+      {search && (
+        <p style={{ fontSize: "0.75rem", color: "var(--text4)", marginBottom: 12 }}>
+          检索「{search}」：{records.length} 条结果
+          <button onClick={() => { setSearch(""); load(); }} style={{ marginLeft: 10, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontSize: "0.72rem" }}>清除</button>
+        </p>
+      )}
 
       {showForm ? (
         <div className="max-w-2xl mx-auto">
@@ -106,9 +124,28 @@ export default function Journal() {
           </div>
         </div>
       ) : records.length > 0 ? (
-        <div className="space-y-3">
-          {records.map(r => (
-            <div key={r.id} className="card p-4 block group relative">
+        <div className="space-y-6">
+          {(() => {
+            // 按月分组（records 按日期倒序，分组自然倒序）
+            const groups: { month: string; items: any[] }[] = [];
+            for (const r of records) {
+              const month = (r.record_date || r.date || "").slice(0, 7);
+              const last = groups[groups.length - 1];
+              if (last && last.month === month) last.items.push(r);
+              else groups.push({ month, items: [r] });
+            }
+            return groups.map((g) => (
+              <div key={g.month}>
+                <p style={{
+                  fontSize: "0.68rem", fontWeight: 600, letterSpacing: "0.08em",
+                  textTransform: "uppercase", color: "var(--text4)",
+                  margin: "0 0 8px 4px",
+                }}>
+                  {g.month} · {g.items.length} 篇
+                </p>
+                <div className="space-y-3">
+                  {g.items.map((r) => (
+                    <div key={r.id} className="card p-4 block group relative">
               <a
                 href={`/journal/${r.id}`}
                 className="no-underline flex-1"
@@ -138,16 +175,20 @@ export default function Journal() {
                   <i className="fa-solid fa-chevron-right text-gray-600 group-hover:text-gray-400 transition flex-shrink-0 mt-2"></i>
                 </div>
               </a>
-              <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                <button onClick={(e) => { e.stopPropagation(); startEdit(r); }}
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition"
-                  title="编辑"><i className="fa-solid fa-pen"></i></button>
-                <button onClick={(e) => { e.stopPropagation(); deleteRecord(r.id); }}
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition"
-                  title="删除"><i className="fa-solid fa-xmark"></i></button>
+                      <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                        <button onClick={(e) => { e.stopPropagation(); startEdit(r); }}
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition"
+                          title="编辑"><i className="fa-solid fa-pen"></i></button>
+                        <button onClick={(e) => { e.stopPropagation(); deleteRecord(r.id); }}
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                          title="删除"><i className="fa-solid fa-xmark"></i></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
       ) : (
         <div className="card p-12 text-center">

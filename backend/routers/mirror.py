@@ -168,14 +168,15 @@ async def api_dashboard(request: Request):
 # ── 日常记录 ──────────────────────────────────────────
 
 @router.get("/journal")
-async def api_journal_list(request: Request):
+async def api_journal_list(request: Request, search: str = ""):
+    """日常记录列表：默认全部返回，支持 ?search= 关键词检索"""
     uid = require_uid(request)
     async with AsyncSessionLocal() as db:
+        q = select(DailyRecord).where(DailyRecord.user_id == uid)
+        if search:
+            q = q.where(DailyRecord.content.contains(search))
         records = (
-            await db.execute(
-                select(DailyRecord).where(DailyRecord.user_id == uid)
-                .order_by(DailyRecord.record_date.desc()).limit(30)
-            )
+            await db.execute(q.order_by(DailyRecord.record_date.desc()).limit(2000))
         ).scalars().all()
         return JSONResponse([
             {
@@ -1508,17 +1509,26 @@ async def api_starmap(request: Request):
                 if src_key in node_by_key:
                     _add_edge(key, src_key, 0.9)
 
-        # 2) 时间邻近（同年同月的事件/记录互相连）
+        # 2) 时间邻近（同年同月的事件/记录各自连成时间链，且事件↔同月记录相连）
         time_buckets: dict = {}
         for key, node in node_by_key.items():
-            if node["type"] == "event":
+            if node["type"] in ("event", "record"):
                 month = node["date"][:7]
                 time_buckets.setdefault(month, []).append(key)
         for month, keys in time_buckets.items():
-            for i in range(len(keys) - 1):
-                _add_edge(keys[i], keys[i + 1], 0.5)
+            events = [k for k in keys if node_by_key[k]["type"] == "event"]
+            records = [k for k in keys if node_by_key[k]["type"] == "record"]
+            for i in range(len(events) - 1):
+                _add_edge(events[i], events[i + 1], 0.5)
+            for i in range(len(records) - 1):
+                _add_edge(records[i], records[i + 1], 0.35)
+            # 事件与同月记录相连（当月发生的事 ↔ 当月的日记）
+            for ek in events[:2]:
+                for rk in records[:2]:
+                    _add_edge(ek, rk, 0.4)
 
-        # 3) 关键词共现（2-gram 特征，共享 ≥2 个双字组连边，k-NN 每节点最多 4 条）
+        # 3) 关键词共现（2-gram 特征，共享 ≥2 个双字组连边，k-NN 每节点最多 5 条）
+        #    跨类型主题连接（记忆↔记录、记录↔事件）让布局混合自然，不再两团分居
         def _words(text: str) -> set:
             grams: set = set()
             for seg in _re.split(r"[\s，。、！？；：,.!?;:（）()「」]+", text or ""):
@@ -1537,11 +1547,11 @@ async def api_starmap(request: Request):
         keys_list = list(node_by_key.keys())
         for i, a in enumerate(keys_list):
             for b in keys_list[i + 1:]:
-                if link_count.get(a, 0) >= 4 or link_count.get(b, 0) >= 4:
+                if link_count.get(a, 0) >= 5 or link_count.get(b, 0) >= 5:
                     continue
                 shared = node_texts[a] & node_texts[b]
                 if len(shared) >= 2:
-                    _add_edge(a, b, min(0.7, 0.3 + 0.08 * len(shared)))
+                    _add_edge(a, b, min(0.65, 0.3 + 0.07 * len(shared)))
                     link_count[a] = link_count.get(a, 0) + 1
                     link_count[b] = link_count.get(b, 0) + 1
 

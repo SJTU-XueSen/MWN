@@ -231,13 +231,16 @@ export default function StarMap() {
           ctx.lineWidth = 1.3;
           ctx.beginPath(); ctx.arc(p.x, p.y, r + 5, 0, Math.PI * 2); ctx.stroke();
         }
-        // 重要节点显示短标题（星图上能认出是哪颗星）
-        if (n.importance >= 0.75 && !dim) {
-          ctx.font = "10px 'PingFang SC', sans-serif";
-          ctx.fillStyle = "rgba(237,234,228,0.75)";
+        // 标签仅悬停/选中时显示（默认不打扰星空）
+        if (isFocus && !dim) {
+          ctx.font = "bold 11px 'PingFang SC', sans-serif";
+          ctx.fillStyle = "rgba(237,234,228,0.9)";
           ctx.textAlign = "center";
-          const label = (n.title || n.content || "").slice(0, 12);
-          ctx.fillText(label, p.x, p.y - r - 6);
+          ctx.shadowColor = "rgba(0,0,0,0.8)";
+          ctx.shadowBlur = 6;
+          const label = (n.title || n.content || "").slice(0, 14);
+          ctx.fillText(label, p.x, p.y - r - 8);
+          ctx.shadowBlur = 0;
         }
         ctx.globalAlpha = 1;
       }
