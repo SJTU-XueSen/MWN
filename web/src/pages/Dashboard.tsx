@@ -284,6 +284,11 @@ export default function Dashboard() {
                 基于 {recordCount} 条记录 · {eventCount} 个事件 · {exploreCount} 个探索领域 · {goalCount} 个目标
                 {totalData <= 1 && "——记录更多，镜像更清晰"}
               </p>
+
+              {/* 置信度随版本/数据积累的曲线 */}
+              {personaFull?.history && personaFull.history.length >= 2 && (
+                <ConfidenceCurve history={personaFull.history} />
+              )}
             </div>
 
             {/* ── 当前信号 ── */}
@@ -743,6 +748,41 @@ export default function Dashboard() {
         )}
       </section>
     </main>
+  );
+}
+
+/** 置信度随人格版本积累的迷你曲线（纯 SVG，无外部依赖） */
+function ConfidenceCurve({ history }: { history: any[] }) {
+  const pts = [...history]
+    .sort((a, b) => (a.version || 0) - (b.version || 0))
+    .map((h) => ({ x: h.version || 0, y: Math.round((h.confidence || 0) * 100) }));
+  if (pts.length < 2) return null;
+  const W = 260, H = 60, PAD = 8;
+  const maxX = Math.max(...pts.map((p) => p.x)), minX = Math.min(...pts.map((p) => p.x));
+  const maxY = Math.max(100, ...pts.map((p) => p.y)), minY = Math.min(0, ...pts.map((p) => p.y));
+  const px = (x: number) => PAD + ((x - minX) / Math.max(1, maxX - minX)) * (W - PAD * 2);
+  const py = (y: number) => H - PAD - ((y - minY) / Math.max(1, maxY - minY)) * (H - PAD * 2);
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${px(p.x).toFixed(1)},${py(p.y).toFixed(1)}`).join(" ");
+  return (
+    <div style={{ marginTop: 12 }}>
+      <p style={{ fontSize: "0.6rem", color: "var(--text4)", marginBottom: 4 }}>
+        置信度随数据积累的变化（v{pts[0].x} → v{pts[pts.length - 1].x}）
+      </p>
+      <svg width={W} height={H} style={{ display: "block" }}>
+        <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="var(--border)" strokeWidth="1" />
+        {pts.map((p, i) => (
+          <circle key={i} cx={px(p.x)} cy={py(p.y)} r="2.5" fill="var(--accent2)">
+            <title>{`v${p.x} · 置信度 ${p.y}%`}</title>
+          </circle>
+        ))}
+        <path d={line} fill="none" stroke="var(--accent2)" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+      <p style={{ fontSize: "0.58rem", color: "var(--text4)", marginTop: 4 }}>
+        {pts[pts.length - 1].y > pts[0].y
+          ? "↗ 数据越多，镜像越清晰——持续记录会让画像更稳定"
+          : "置信度随数据积累自然波动——继续记录会趋于稳定"}
+      </p>
+    </div>
   );
 }
 

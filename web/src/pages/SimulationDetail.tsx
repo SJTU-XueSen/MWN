@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import EvidenceButton from "../components/EvidenceButton";
 
 const SCENARIO_ICONS: Record<string, string> = {
   further_study: "📚", employment: "💼", entrepreneurship: "🚀", cross_discipline: "🔄",
@@ -164,7 +165,14 @@ export default function SimulationDetail() {
                   </div>
                 )}
 
-                {path.grounding && <div className="mb-4"><p className="text-xs text-gray-600 italic">{path.grounding}</p></div>}
+                {path.grounding && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-gray-600 italic">{path.grounding}</p>
+                      <EvidenceButton query={`${path.label || ""} ${path.grounding}`} targetType="simulation" targetId={Number(id)} label="查看证据" size="xs" style={{ flexShrink: 0 }} />
+                    </div>
+                  </div>
+                )}
 
                 {(() => {
                   const future = sim.futures?.[idx];

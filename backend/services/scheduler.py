@@ -164,12 +164,14 @@ async def _cleanup_activities():
 
 
 async def start_scheduler():
-    """调度循环：每天 00:00 / 12:00 触发爬取"""
+    """调度循环：每周日 00:00 触发一次（外围功能降权；手动触发不受影响）"""
     while True:
         now = datetime.utcnow()
-        targets = [now.replace(hour=0, minute=0, second=0, microsecond=0),
-                   now.replace(hour=12, minute=0, second=0, microsecond=0)]
-        next_target = min((t for t in targets if t > now), default=now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1))
+        # 下一个周日 00:00
+        days_until_sunday = (6 - now.weekday()) % 7
+        next_target = (now + timedelta(days=days_until_sunday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        if next_target <= now:
+            next_target += timedelta(days=7)
 
         delay = (next_target - now).total_seconds()
         await asyncio.sleep(max(1, delay))

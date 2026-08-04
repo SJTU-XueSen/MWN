@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Briefcase,
   CalendarDays,
+  FileText,
   Fingerprint,
   FlaskConical,
   Globe,
@@ -95,15 +96,15 @@ function Sidebar() {
         <NavLink to="/projection" style={s(a("/projection"))}><Telescope size={15} />推演人生</NavLink>
         <NavLink to="/future-chat" style={s(a("/future-chat"))}><MessageCircle size={15} />未来对话</NavLink>
         <NavLink to="/goals" style={s(a("/goals"))}><Target size={15} />人生目标</NavLink>
-        <NavLink to="/reports" style={s(a("/reports"))}><Globe size={15} />成长报告</NavLink>
+        <NavLink to="/reports" style={s(a("/reports"))}><FileText size={15} />成长报告</NavLink>
         <Section label="🌏 走向世界" />
         <NavLink to="/connections" end style={s(a("/connections", true))}><CalendarDays size={15} />活动大厅</NavLink>
+        <NavLink to="/connections/chat" style={s(a("/connections/chat"))}><MessageCircle size={15} />团队聊天</NavLink>
+        <NavLink to="/connections/work" style={s(a("/connections/work"))}><Briefcase size={15} />工作台</NavLink>
+        <Section label="🧰 更多" dim />
         <NavLink to="/ai-search" style={s(a("/ai-search"))}><Search size={15} />AI 检索</NavLink>
         <NavLink to="/memo" style={s(a("/memo"))}><StickyNote size={15} />备忘录</NavLink>
         <NavLink to="/references" style={s(a("/references"))}><Globe size={15} />人生参考</NavLink>
-        <Section label="🤝 与他人连接" />
-        <NavLink to="/connections/chat" style={s(a("/connections/chat"))}><MessageCircle size={15} />聊天</NavLink>
-        <NavLink to="/connections/work" style={s(a("/connections/work"))}><Briefcase size={15} />工作台</NavLink>
       </nav>
       <div style={{ padding: "12px 8px", borderTop: "1px solid var(--sidebar-border)" }}>
         {user && <NotificationBell />}
@@ -145,9 +146,9 @@ function LogoutButton() {
   );
 }
 
-function Section({ label }: { label: string }) {
+function Section({ label, dim }: { label: string; dim?: boolean }) {
   return (
-    <p style={{ fontSize: "0.6rem", fontWeight: 600, textTransform: "uppercase", color: "#64748B", padding: "14px 8px 2px", margin: 0, letterSpacing: "0.05em" }}>
+    <p style={{ fontSize: "0.6rem", fontWeight: 600, textTransform: "uppercase", color: "#64748B", padding: "14px 8px 2px", margin: 0, letterSpacing: "0.05em", opacity: dim ? 0.5 : 1 }}>
       {label}
     </p>
   );

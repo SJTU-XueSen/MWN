@@ -471,6 +471,79 @@ async def api_persona_generate(request: Request):
     return JSONResponse({"ok": True, "message": "人格已更新", "refresh": True})
 
 
+@router.get("/persona/compare")
+async def api_persona_compare(request: Request, v1: int = 0, v2: int = 0):
+    """对比两个人格版本：五维差异 + 期间新增数据（成长轨迹可视化）"""
+    uid = require_uid(request)
+    if not v1 or not v2 or v1 == v2:
+        return JSONResponse({"error": "请选择两个不同版本"}, 400)
+    async with AsyncSessionLocal() as db:
+        a = await db.get(PersonaProfile, v1)
+        b = await db.get(PersonaProfile, v2)
+        if not a or not b or a.user_id != uid or b.user_id != uid:
+            return JSONResponse({"error": "not_found"}, 404)
+        # 按生成时间排序：旧→新
+        older, newer = (a, b) if a.generated_at <= b.generated_at else (b, a)
+
+        # 五维差异（合并所有维度名）
+        dims = {}
+        for label, old_p, new_p in [
+            ("ability", older.ability_profile or {}, newer.ability_profile or {}),
+            ("interest", older.interest_profile or {}, newer.interest_profile or {}),
+            ("value", older.value_profile or {}, newer.value_profile or {}),
+            ("behavior", older.behavior_profile or {}, newer.behavior_profile or {}),
+        ]:
+            for key in set(list(old_p.keys()) + list(new_p.keys())):
+                old_v = old_p.get(key)
+                new_v = new_p.get(key)
+                if old_v is None or new_v is None or old_v == new_v:
+                    continue
+                try:
+                    dims[f"{label}.{key}"] = {
+                        "dimension": key, "group": label,
+                        "from": round(float(old_v), 1), "to": round(float(new_v), 1),
+                        "delta": round(float(new_v) - float(old_v), 1),
+                    }
+                except (TypeError, ValueError):
+                    pass
+
+        # 期间新增的记录/事件（变化原因）
+        new_records = (
+            await db.execute(
+                select(DailyRecord).where(
+                    DailyRecord.user_id == uid,
+                    DailyRecord.created_at > older.generated_at,
+                ).order_by(DailyRecord.created_at.asc())
+            )
+        ).scalars().all()
+        new_events = (
+            await db.execute(
+                select(LifeEvent).where(
+                    LifeEvent.user_id == uid,
+                    LifeEvent.created_at > older.generated_at,
+                ).order_by(LifeEvent.created_at.asc())
+            )
+        ).scalars().all()
+        new_data = [
+            {"type": "record", "title": (r.content or "")[:80], "date": r.created_at.strftime("%Y-%m-%d") if r.created_at else ""}
+            for r in new_records
+        ] + [
+            {"type": "event", "title": e.title or "", "date": e.occurred_at.strftime("%Y-%m-%d") if e.occurred_at else ""}
+            for e in new_events
+        ]
+
+        return JSONResponse({
+            "older": {"id": older.id, "version": older.version, "confidence": older.confidence,
+                      "persona_type": older.persona_type,
+                      "date": older.generated_at.strftime("%Y-%m-%d") if older.generated_at else ""},
+            "newer": {"id": newer.id, "version": newer.version, "confidence": newer.confidence,
+                      "persona_type": newer.persona_type,
+                      "date": newer.generated_at.strftime("%Y-%m-%d") if newer.generated_at else ""},
+            "diff": sorted(dims.values(), key=lambda x: -abs(x["delta"])),
+            "new_data": new_data,
+        })
+
+
 # ── 人生模拟 ──────────────────────────────────────────
 
 @router.get("/simulations")
@@ -1259,6 +1332,28 @@ async def api_export(request: Request):
             for r in (await db.execute(select(GrowthReport).where(GrowthReport.user_id == uid))).scalars().all()
         ]
         return JSONResponse(data)
+
+
+# ── 证据链（每个 AI 结论可展开真实数据来源）────────────
+
+@router.post("/evidence")
+async def api_evidence(request: Request):
+    """为 AI 结论召回真实数据证据（数据铁律：只返回库中真实内容）"""
+    uid = require_uid(request)
+    body = await request.json()
+    query = str(body.get("query", ""))
+    target_type = str(body.get("target_type", ""))
+    target_id = body.get("target_id")
+    limit = min(int(body.get("limit", 8)), 20)
+
+    from backend.services.evidence_service import build_evidence
+
+    async with AsyncSessionLocal() as db:
+        evidence = await build_evidence(
+            db, uid, query=query, target_type=target_type,
+            target_id=int(target_id) if target_id else None, limit=limit,
+        )
+        return JSONResponse({"evidence": evidence, "count": len(evidence)})
 
 
 # ── 人生参考 ──────────────────────────────────────────

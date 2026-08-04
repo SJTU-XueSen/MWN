@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import EvidenceButton from "../components/EvidenceButton";
 import { useNavigate, useParams } from "react-router-dom";
 
 const EVENT_ICONS: Record<string, string> = {
@@ -66,7 +67,7 @@ export default function ReportDetail() {
           <div className="flex items-start gap-3">
             <span className="text-2xl">✨</span>
             <div>
-              <h3 className="font-semibold text-white mb-2">总体概览</h3>
+              <h3 className="font-semibold text-white mb-2">总体概览 <EvidenceButton query="总体概览" targetType="report" targetId={Number(id)} label="来源" size="xs" style={{ marginLeft: 6 }} /></h3>
               <p className="#475569 leading-relaxed">{c.summary}</p>
             </div>
           </div>
@@ -77,7 +78,7 @@ export default function ReportDetail() {
       <div className="grid grid-cols-2 gap-4 mb-4">
         {c.emotional_trend && (
           <div className="card p-5">
-            <h4 className="text-sm font-semibold text-gray-400 mb-3">📈 情绪趋势</h4>
+            <h4 className="text-sm font-semibold text-gray-400 mb-3">📈 情绪趋势 <EvidenceButton query="情绪趋势" targetType="report" targetId={Number(id)} label="来源" size="xs" style={{ marginLeft: 6 }} /></h4>
             {c.emotional_trend.description && <p className="text-sm text-gray-400 mb-3">{c.emotional_trend.description}</p>}
             {(() => {
               const pos = c.emotional_trend.positive_pct || c.emotional_trend.positive || 0;
@@ -102,7 +103,7 @@ export default function ReportDetail() {
 
         {c.ability_growth && (
           <div className="card p-5">
-            <h4 className="text-sm font-semibold text-gray-400 mb-3">💪 能力成长</h4>
+            <h4 className="text-sm font-semibold text-gray-400 mb-3">💪 能力成长 <EvidenceButton query="能力成长" targetType="report" targetId={Number(id)} label="来源" size="xs" style={{ marginLeft: 6 }} /></h4>
             <div className="space-y-2">
               {(() => {
                 const labels: Record<string, string> = { tech: "技术能力", creative: "创造力", social: "社交力", self_awareness: "自我认知" };
@@ -124,7 +125,7 @@ export default function ReportDetail() {
       {/* 兴趣变化 */}
       {c.interest_changes && (
         <div className="card p-5 mb-4">
-          <h4 className="text-sm font-semibold text-gray-400 mb-3">🎯 兴趣领域变化</h4>
+          <h4 className="text-sm font-semibold text-gray-400 mb-3">🎯 兴趣领域变化 <EvidenceButton query="兴趣领域变化" targetType="report" targetId={Number(id)} label="来源" size="xs" style={{ marginLeft: 6 }} /></h4>
           <div className="space-y-3">
             {c.interest_changes.map((item: any, i: number) => (
               <div key={i}>
@@ -151,7 +152,7 @@ export default function ReportDetail() {
       {/* 关键事件分析 */}
       {(c.key_events_analysis || c.key_events) && (
         <div className="card p-5 mb-4">
-          <h4 className="text-sm font-semibold text-gray-400 mb-3">🔑 关键事件</h4>
+          <h4 className="text-sm font-semibold text-gray-400 mb-3">🔑 关键事件 <EvidenceButton query="关键事件" targetType="report" targetId={Number(id)} label="来源" size="xs" style={{ marginLeft: 6 }} /></h4>
           <div className="space-y-2">
             {(c.key_events_analysis || c.key_events).map((event: any, i: number) => (
               <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
@@ -169,7 +170,7 @@ export default function ReportDetail() {
       {/* 人格变化 */}
       {c.personality_changes && (
         <div className="card p-5 mb-4">
-          <h4 className="text-sm font-semibold text-gray-400 mb-2">🧬 人格变化</h4>
+          <h4 className="text-sm font-semibold text-gray-400 mb-2">🧬 人格变化 <EvidenceButton query="人格变化" targetType="report" targetId={Number(id)} label="来源" size="xs" style={{ marginLeft: 6 }} /></h4>
           <p className="text-sm text-gray-400 leading-relaxed">{c.personality_changes}</p>
         </div>
       )}
@@ -178,7 +179,7 @@ export default function ReportDetail() {
       <div className="grid grid-cols-2 gap-4 mb-4">
         {c.gap_analysis && (
           <div className="card p-5">
-            <h4 className="text-sm font-semibold text-gray-400 mb-2">🔍 差距分析</h4>
+            <h4 className="text-sm font-semibold text-gray-400 mb-2">🔍 差距分析 <EvidenceButton query="差距分析" targetType="report" targetId={Number(id)} label="来源" size="xs" style={{ marginLeft: 6 }} /></h4>
             <p className="text-sm text-gray-400 leading-relaxed">{c.gap_analysis}</p>
           </div>
         )}

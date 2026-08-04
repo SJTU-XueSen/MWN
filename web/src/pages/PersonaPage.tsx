@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import EvidenceButton from "../components/EvidenceButton";
 
 const INTEREST_ICONS: Record<string, string> = {
   "AI": "🤖", "编程": "💻", "科研": "🔬", "设计": "🎨", "写作": "✍️",
@@ -11,6 +12,8 @@ export default function PersonaPage() {
   const [data, setData] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [compareSel, setCompareSel] = useState<number[]>([]);
+  const [compareData, setCompareData] = useState<any>(null);
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
   const versionId = searchParams.get("version");
@@ -67,6 +70,9 @@ export default function PersonaPage() {
             <div className="text-5xl mb-3">🧬</div>
             <h3 className="text-2xl font-bold text-white">{persona.persona_type || "探索中"}</h3>
             <p className="#475569 mt-2 max-w-lg mx-auto">{persona.persona_summary || persona.summary}</p>
+            <div style={{ marginTop: 10, display: "flex", justifyContent: "center", gap: 8 }}>
+              <EvidenceButton query={`${persona.persona_type || ""} ${persona.persona_summary || ""}`} targetType="persona" targetId={persona.id} label="为什么得出这个人格" />
+            </div>
             <div className="flex items-center justify-center gap-4 mt-4">
               <span className="tag bg-white/5 text-gray-400 text-xs">
                 v{persona.version} · 置信度 {Math.round((persona.confidence || 0) * 100)}%
@@ -116,6 +122,9 @@ export default function PersonaPage() {
               <div className="card p-5">
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                   <span>💪</span> 能力画像
+                  <span style={{ marginLeft: "auto" }}>
+                    <EvidenceButton query={"能力画像" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
+                  </span>
                 </h4>
                 <div className="space-y-3">
                   {Object.entries((persona.ability_profile || persona.ability || {}) as Record<string, number>).map(([key, val]) => (
@@ -139,6 +148,9 @@ export default function PersonaPage() {
               <div className="card p-5">
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                   <span>🎯</span> 兴趣画像
+                  <span style={{ marginLeft: "auto" }}>
+                    <EvidenceButton query={"兴趣画像" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
+                  </span>
                 </h4>
                 <div className="space-y-3">
                   {Object.entries((persona.interest_profile || persona.interest || {}) as Record<string, number>).map(([key, val]) => (
@@ -162,6 +174,9 @@ export default function PersonaPage() {
               <div className="card p-5">
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                   <span>💎</span> 价值观画像
+                  <span style={{ marginLeft: "auto" }}>
+                    <EvidenceButton query={"价值观画像" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
+                  </span>
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries((persona.value_profile || persona.value || {}) as Record<string, number>).map(([key, val]) => (
@@ -179,6 +194,9 @@ export default function PersonaPage() {
               <div className="card p-5">
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                   <span>🧭</span> 决策风格
+                  <span style={{ marginLeft: "auto" }}>
+                    <EvidenceButton query={"决策风格" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
+                  </span>
                 </h4>
                 {(persona.decision_style || persona.decision).style && (
                   <p className="text-lg font-semibold text-white mb-2">{(persona.decision_style || persona.decision).style}</p>
@@ -198,6 +216,9 @@ export default function PersonaPage() {
               <div className="card p-5">
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
                   <span>🔄</span> 行为模式
+                  <span style={{ marginLeft: "auto" }}>
+                    <EvidenceButton query={"行为模式" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
+                  </span>
                 </h4>
                 <div className="space-y-3">
                   {Object.entries((persona.behavior_profile || persona.behavior || {}) as Record<string, number>).map(([key, val]) => (
@@ -221,18 +242,27 @@ export default function PersonaPage() {
               <div className="card p-5 col-span-2">
                 <h4 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
                   <span>📜</span> 画像版本历史
+                  <span className="text-xs text-gray-600 ml-1">选择两个版本可对比成长变化</span>
                 </h4>
                 <div className="flex items-center gap-2 overflow-x-auto pb-2">
                   {history.map((ver: any) => (
-                    <a
+                    <div
                       key={ver.id}
-                      href={`/persona?version=${ver.id}`}
-                      onClick={e => { e.preventDefault(); nav(`/persona?version=${ver.id}`); }}
-                      className={`flex-shrink-0 p-3 rounded-xl text-center min-w-[100px] no-underline hover:scale-105 transition ${
-                        ver.id === persona.id ? "bg-indigo-500/15 border border-indigo-500/30" : "bg-white/5 hover:bg-white/5"
+                      className={`flex-shrink-0 p-3 rounded-xl text-center min-w-[100px] no-underline transition cursor-pointer ${
+                        compareSel.includes(ver.id)
+                          ? "bg-emerald-500/15 border border-emerald-500/30"
+                          : ver.id === persona.id ? "bg-indigo-500/15 border border-indigo-500/30" : "bg-white/5 hover:bg-white/5"
                       }`}
+                      onClick={() => {
+                        setCompareSel(prev => {
+                          if (prev.includes(ver.id)) return prev.filter(x => x !== ver.id);
+                          if (prev.length >= 2) return [prev[1], ver.id];
+                          return [...prev, ver.id];
+                        });
+                      }}
+                      title="点击选择对比"
                     >
-                      <div className={`text-xs font-bold ${ver.id === persona.id ? "#8b5e3c" : "text-gray-500"}`}>
+                      <div className={`text-xs font-bold ${compareSel.includes(ver.id) ? "text-emerald-400" : ver.id === persona.id ? "#8b5e3c" : "text-gray-500"}`}>
                         v{ver.version}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
@@ -241,9 +271,67 @@ export default function PersonaPage() {
                       <div className="text-xs text-gray-600 mt-0.5">
                         {Math.round((ver.confidence || 0) * 100)}%
                       </div>
-                    </a>
+                    </div>
                   ))}
                 </div>
+
+                {compareSel.length === 2 && (
+                  <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
+                    <button
+                      className="btn"
+                      style={{ padding: "6px 16px", fontSize: "0.75rem" }}
+                      onClick={async () => {
+                        const [a, b] = compareSel;
+                        const resp = await fetch(`/api/mirror/persona/compare?v1=${a}&v2=${b}`, { credentials: "include" });
+                        setCompareData(await resp.json());
+                      }}
+                    >
+                      对比这两个版本
+                    </button>
+                    <button className="btn-ghost" style={{ padding: "6px 16px", fontSize: "0.75rem" }} onClick={() => { setCompareSel([]); setCompareData(null); }}>
+                      取消
+                    </button>
+                  </div>
+                )}
+
+                {compareData && compareData.diff && (
+                  <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--accent-bg2)", border: "1px solid var(--accent-border)" }}>
+                    <p style={{ fontSize: "0.8rem", fontWeight: 700, marginBottom: 8 }}>
+                      📈 v{compareData.older.version}（{Math.round((compareData.older.confidence || 0) * 100)}%）→ v{compareData.newer.version}（{Math.round((compareData.newer.confidence || 0) * 100)}%）
+                    </p>
+                    {compareData.diff.length === 0 && (
+                      <p style={{ fontSize: "0.75rem", color: "var(--text4)" }}>五维画像无明显变化——数据仍在积累中</p>
+                    )}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {compareData.diff.map((d: any, i: number) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.78rem" }}>
+                          <span style={{ color: "var(--text3)", width: 80 }}>{d.dimension}</span>
+                          <span style={{ color: "var(--text4)" }}>{d.from}</span>
+                          <span style={{ color: "var(--text4)" }}>→</span>
+                          <span style={{ color: "var(--text2)", fontWeight: 600 }}>{d.to}</span>
+                          <span style={{ color: d.delta > 0 ? "#34D399" : "#F87171", fontWeight: 700 }}>
+                            {d.delta > 0 ? `+${d.delta}` : d.delta}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    {compareData.new_data && compareData.new_data.length > 0 && (
+                      <div style={{ marginTop: 12 }}>
+                        <p style={{ fontSize: "0.72rem", color: "var(--text4)", marginBottom: 6 }}>是什么数据带来了这些变化：</p>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          {compareData.new_data.map((nd: any, i: number) => (
+                            <span key={i} className="tag" style={{
+                              background: nd.type === "event" ? "rgba(52,211,153,0.15)" : "var(--surface2)",
+                              color: nd.type === "event" ? "#34D399" : "var(--text3)",
+                            }}>
+                              {nd.type === "event" ? "🗓 " : "📝 "}{nd.title.slice(0, 24)}{nd.title.length > 24 ? "…" : ""} · {nd.date}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
