@@ -7,17 +7,21 @@ import { Link } from "react-router-dom";
  */
 // 类型基色（HSL）：色相 = 类型；饱和度/亮度由「情绪 × 长期影响」动态调整
 const TYPE_HSL: Record<string, { h: number; s: number; l: number }> = {
-  memory: { h: 42, s: 78, l: 60 },   // 金 — 生命记忆
-  event: { h: 6, s: 72, l: 62 },     // 玫红 — 人生事件
-  record: { h: 158, s: 55, l: 55 },  // 青绿 — 日常记录
+  memory: { h: 42, s: 78, l: 60 },    // 金 — 生命记忆（日记浓缩，可溯源）
+  event: { h: 6, s: 72, l: 62 },      // 玫红 — 人生事件
+  simulation: { h: 220, s: 8, l: 62 }, // 灰 — 未来模拟（不参与情绪分色）
+  click: { h: 212, s: 62, l: 60 },    // 蓝 — 点击数据
+  team: { h: 34, s: 78, l: 58 },      // 琥珀 — 组队数据
 };
 
 /**
  * 动态分色：类型定色相；长期影响（lasting）越高越亮越饱和，
  * 消极情绪偏冷偏暗；记忆点被后来的生活反复回响 → 颜色逐渐变亮。
+ * 模拟（灰色）固定低饱和，与其他记忆区分。
  */
 function nodeColor(n: Node): string {
   const base = TYPE_HSL[n.type] || TYPE_HSL.memory;
+  if (n.type === "simulation") return `hsl(${base.h}, ${base.s}%, ${base.l}%)`;
   const lasting = typeof n.lasting === "number" ? n.lasting : 0.5;
   const neg = n.emotion === "negative";
   const s = Math.min(100, base.s * (0.5 + 0.55 * lasting) * (neg ? 0.72 : 1));
@@ -38,16 +42,6 @@ export default function StarMap() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
 
-  async function refresh() {
-    setRefreshing(true);
-    try {
-      const r = await fetch("/api/mirror/starmap", { credentials: "include" });
-      setData(await r.json());
-    } catch {
-    } finally {
-      setRefreshing(false);
-    }
-  }
   const [selected, setSelected] = useState<Node | null>(null);
   const [hovered, setHovered] = useState<Node | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -111,8 +105,9 @@ export default function StarMap() {
       pos.set(n.id, { x: W / 2 + Math.cos(angle) * rad, y: H / 2 + Math.sin(angle) * rad, vx: 0, vy: 0 });
     });
 
-    // 预计算力导向（斥力 + 弹簧 + 向心），200 迭代
-    for (let iter = 0; iter < 200; iter++) {
+    // 预计算力导向（斥力 + 弹簧 + 向心）；节点越多迭代越少（千级节点仍保持秒级布局）
+    const iters = filtered.nodes.length > 700 ? 90 : filtered.nodes.length > 300 ? 130 : 200;
+    for (let iter = 0; iter < iters; iter++) {
       for (const [id, p] of pos) {
         // 向心力
         p.vx += (W / 2 - p.x) * 0.004;
@@ -216,9 +211,9 @@ export default function StarMap() {
         const dim = focusId && !isFocus && !isRelated;
 
         ctx.globalAlpha = dim ? 0.12 : 1;
-        // 发光（大节点更亮）
+        // 发光：仅焦点/关联/大节点开启（千级节点全开 shadow 会严重掉帧）
         ctx.shadowColor = color;
-        ctx.shadowBlur = isFocus ? 30 : 10 + r * 0.8;
+        ctx.shadowBlur = isFocus ? 30 : isRelated ? 14 : r > 15 ? 8 : 0;
         ctx.fillStyle = color;
         ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0;
@@ -342,7 +337,7 @@ export default function StarMap() {
           <h1 style={{ fontSize: "1.6rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#EDEAE4" }}>记忆星图</h1>
           <p style={{ fontSize: "0.8rem", color: "#97917F", marginTop: 4, lineHeight: 1.6 }}>
             {stats
-              ? `${stats.nodes} 颗星 · ${stats.links} 条连线 · ${stats.memories} 条记忆 / ${stats.events} 个事件 / ${stats.records} 条记录`
+              ? `${stats.nodes} 颗星 · ${stats.links} 条连线 · ${stats.memories} 条记忆（源自 ${stats.records} 条日记）/ ${stats.events} 个事件 / ${stats.simulations} 条未来 / ${stats.clicks} 个点击 / ${stats.teams} 个战队`
               : "正在汇聚你的人生数据..."}
           </p>
         </div>
@@ -357,7 +352,7 @@ export default function StarMap() {
             }}
           />
           <button
-            onClick={refresh}
+            onClick={() => { setRefreshing(true); fetch("/api/mirror/starmap?fresh=1", { credentials: "include" }).then(r => r.json()).then(setData).catch(() => {}).finally(() => setRefreshing(false)); }}
             disabled={refreshing}
             style={{
               background: "rgba(201,168,124,0.12)", border: "1px solid rgba(201,168,124,0.25)",
@@ -404,8 +399,8 @@ export default function StarMap() {
               {selected.source_type === "event" && selected.source_id && (
                 <Link to={`/events/${selected.source_id}`} style={{ fontSize: "0.72rem", color: "#C9A87C", textDecoration: "none", border: "1px solid rgba(201,168,124,0.25)", padding: "5px 12px", borderRadius: 8 }}>查看事件 →</Link>
               )}
-              {selected.source_type === "record" && selected.source_id && (
-                <Link to={`/journal/${selected.source_id}`} style={{ fontSize: "0.72rem", color: "#C9A87C", textDecoration: "none", border: "1px solid rgba(201,168,124,0.25)", padding: "5px 12px", borderRadius: 8 }}>查看记录 →</Link>
+              {selected.source_type === "diary" && selected.source_id && (
+                <Link to={`/journal/${selected.source_id}`} style={{ fontSize: "0.72rem", color: "#C9A87C", textDecoration: "none", border: "1px solid rgba(201,168,124,0.25)", padding: "5px 12px", borderRadius: 8 }}>溯源日记 →</Link>
               )}
               <button
                 onClick={() => {
@@ -432,19 +427,26 @@ export default function StarMap() {
 
       {/* 图例 */}
       <div style={{ display: "flex", gap: 18, marginTop: 14, justifyContent: "center", flexWrap: "wrap" }}>
-        {[["memory", "生命记忆"], ["event", "人生事件"], ["record", "日常记录"]].map(([t, label]) => (
+        {[["memory", "生命记忆"], ["event", "人生事件"], ["simulation", "未来模拟"], ["click", "点击数据"], ["team", "组队数据"]].map(([t, label]) => (
           <span key={t} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem", color: "#97917F" }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", background: nodeColor({ type: t } as Node), boxShadow: "0 0 8px rgba(255,255,255,0.3)" }} />
             {label}
           </span>
         ))}
-        <span style={{ fontSize: "0.72rem", color: "#6E695C" }}>· 亮度 = 该记忆点被后来生活反复回响的程度（颜色随人生演化）</span>
-        <span style={{ fontSize: "0.72rem", color: "#6E695C" }}>· 空白拖拽平移 / 节点拖拽 / 滚轮缩放 / 点击查看</span>
+        <span style={{ fontSize: "0.72rem", color: "#6E695C" }}>· 颜色随人生演化：被后来生活反复回响的记忆更亮，消极时刻偏冷偏暗</span>
+        <span style={{ fontSize: "0.72rem", color: "#6E695C" }}>· 空白拖拽平移 / 节点拖拽 / 滚轮缩放 / 点击查看 / 搜索定位</span>
       </div>
     </div>
   );
 }
 
 function typeLabel(t: string): string {
-  return t === "memory" ? "生命记忆" : t === "event" ? "人生事件" : "日常记录";
+  switch (t) {
+    case "memory": return "生命记忆";
+    case "event": return "人生事件";
+    case "simulation": return "未来模拟";
+    case "click": return "点击数据";
+    case "team": return "组队数据";
+    default: return t;
+  }
 }

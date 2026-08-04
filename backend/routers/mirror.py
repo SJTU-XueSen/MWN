@@ -24,9 +24,12 @@ from backend.database.models import (
     LifeMemory,
     Memo,
     Notification,
+    PageVisit,
     PersonaProfile,
     Simulation,
     StudentActivity,
+    Team,
+    TeamMember,
     User,
     UserActivity,
 )
@@ -1369,93 +1372,153 @@ async def api_evidence(request: Request):
 
 # ── 记忆星图（人生数据整体可视化）────────────────────
 
+_starmap_cache: dict = {}  # uid -> (ts, payload)；TTL 120s，?fresh=1 强制重算
+
+
 @router.get("/starmap")
 async def api_starmap(request: Request):
-    """返回星图数据：记忆/事件/记录节点 + 关联边（全部 user_id 过滤）"""
+    """返回星图数据：全量日常记录/人生事件 + 模拟路径(灰)/点击数据/组队数据，
+    关联边按时间链 + 主题共现（倒排索引）。全部 user_id 过滤。"""
+    import re as _re
+    import time as _time
     uid = require_uid(request)
+    fresh = request.query_params.get("fresh") == "1"
+    hit = _starmap_cache.get(uid)
+    if not fresh and hit and _time.time() - hit[0] < 120:
+        return JSONResponse(hit[1])
+
     async with AsyncSessionLocal() as db:
-        # ── 节点收集 ──
+        # ── 节点收集（全量） ──
+        # 记忆节点 = 日记浓缩后的生命记忆（可溯源），原始流水日记不上星
         memories = (
             await db.execute(
-                select(LifeMemory).where(LifeMemory.user_id == uid)
-                .order_by(LifeMemory.importance_score.desc()).limit(15)
+                select(LifeMemory).where(
+                    LifeMemory.user_id == uid, LifeMemory.source_type == "diary"
+                ).order_by(LifeMemory.created_at.asc())
             )
         ).scalars().all()
+        # 事件本身的记忆浓缩并入事件节点（不重复出星）
         events = (
             await db.execute(
                 select(LifeEvent).where(LifeEvent.user_id == uid)
-                .order_by(LifeEvent.occurred_at.desc()).limit(12)
+                .order_by(LifeEvent.occurred_at.asc())
             )
         ).scalars().all()
-        records = (
+        sims = (
             await db.execute(
-                select(DailyRecord).where(DailyRecord.user_id == uid)
-                .order_by(DailyRecord.record_date.desc()).limit(12)
+                select(Simulation).where(Simulation.user_id == uid)
+                .order_by(Simulation.created_at.desc()).limit(1)
+            )
+        ).scalars().all()
+        visits = (
+            await db.execute(
+                select(PageVisit).where(PageVisit.user_id == uid)
+                .order_by(PageVisit.visit_count.desc())
+            )
+        ).scalars().all()
+        teams = (
+            await db.execute(
+                select(Team)
+                .join(TeamMember, TeamMember.team_id == Team.id)
+                .where(TeamMember.user_id == uid)
             )
         ).scalars().all()
 
-        # 记录 → 情绪（供节点分色）
+        # 记忆的情绪从其来源日记的 AI 分析推断（memory 表不存 emotion）
+        record_ids = [m.source_id for m in memories if m.source_id]
         record_emotion: dict = {}
-        for r in records:
-            ana = r.ai_analysis or {}
-            record_emotion[r.id] = ana.get("emotion", "neutral") or "neutral"
+        if record_ids:
+            from sqlalchemy import select as _select
+            recs = (
+                await db.execute(
+                    _select(DailyRecord.id, DailyRecord.ai_analysis)
+                    .where(DailyRecord.user_id == uid, DailyRecord.id.in_(record_ids[:500]))
+                )
+            ).all()
+            for rid, ana in recs:
+                ana = ana or {}
+                record_emotion[rid] = ana.get("emotion", "neutral") or "neutral"
         event_emotion = {e.id: e.emotion or "neutral" for e in events}
-        # 记忆的情绪由其来源推断
-        def _memory_emotion(m) -> str:
-            if m.source_type == "diary":
-                return record_emotion.get(m.source_id, "neutral")
-            if m.source_type == "event":
-                return event_emotion.get(m.source_id, "neutral")
-            return "neutral"
 
         nodes: list[dict] = []
         node_by_key: dict = {}
         for m in memories:
             key = f"memory:{m.id}"
-            node = {
+            nodes.append({
                 "id": key, "type": "memory",
                 "title": (m.memory_content or "")[:40],
                 "content": m.memory_content or "",
                 "importance": round(m.importance_score or 0.5, 2),
                 "date": m.created_at.strftime("%Y-%m-%d") if m.created_at else "",
-                "source_id": m.source_id, "source_type": m.source_type,
-                "emotion": _memory_emotion(m),
-                "lasting": round(min(1.0, (m.importance_score or 0.5) * 0.85 + 0.1), 2),
-            }
-            nodes.append(node)
-            node_by_key[key] = node
+                "source_id": m.source_id, "source_type": "diary",  # 溯源到日记
+                "emotion": record_emotion.get(m.source_id, "neutral"),
+                "lasting": 0.5,
+            })
+            node_by_key[key] = nodes[-1]
         for e in events:
             key = f"event:{e.id}"
-            node = {
+            nodes.append({
                 "id": key, "type": "event",
                 "title": e.title or "",
-                "content": e.description or e.title or "",
+                "content": (e.description or e.title or "")[:200],
                 "importance": 0.78,
                 "date": e.occurred_at.strftime("%Y-%m-%d") if e.occurred_at else "",
                 "source_id": e.id, "source_type": "event",
                 "emotion": event_emotion.get(e.id, "neutral"),
-                "lasting": 0.8,  # 事件默认高长期影响，后续按关联频率调整
-            }
-            nodes.append(node)
-            node_by_key[key] = node
-        for r in records:
-            key = f"record:{r.id}"
+                "lasting": 0.8,  # 事件默认高长期影响，回响计算后再调整
+            })
+            node_by_key[key] = nodes[-1]
+        # 模拟路径（灰色未来之星）
+        for sim in sims:
+            for i, path in enumerate(sim.output_paths or []):
+                label = path.get("label") or path.get("path_type_hint") or f"未来路径 {i + 1}"
+                key = f"simulation:{sim.id}:{i}"
+                nodes.append({
+                    "id": key, "type": "simulation",
+                    "title": str(label)[:40],
+                    "content": (path.get("description") or "")[:200],
+                    "importance": 0.72,
+                    "date": sim.created_at.strftime("%Y-%m-%d") if sim.created_at else "",
+                    "source_id": sim.id, "source_type": "simulation",
+                    "emotion": "neutral",
+                    "lasting": 0.75,
+                })
+                node_by_key[key] = nodes[-1]
+        # 点击数据（访问过的页面，大小 = 访问次数）
+        for v in visits:
+            key = f"click:{v.path}"
             node = {
-                "id": key, "type": "record",
-                "title": (r.content or "")[:40],
-                "content": r.content or "",
-                "importance": 0.55,
-                "date": r.record_date.strftime("%Y-%m-%d") if r.record_date else "",
-                "source_id": r.id, "source_type": "record",
-                "emotion": record_emotion.get(r.id, "neutral"),
-                "lasting": 0.4,
+                "id": key, "type": "click",
+                "title": (v.label or v.path or "")[:40],
+                "content": f"{v.path or ''} · 访问 {v.visit_count} 次",
+                "importance": round(min(0.95, 0.42 + 0.006 * (v.visit_count or 0)), 2),
+                "date": v.last_visited.strftime("%Y-%m-%d") if v.last_visited else "",
+                "source_id": None, "source_type": "click",
+                "emotion": "neutral",
+                "lasting": 0.5,
             }
             nodes.append(node)
             node_by_key[key] = node
+        # 组队数据
+        for t in teams:
+            key = f"team:{t.id}"
+            nodes.append({
+                "id": key, "type": "team",
+                "title": (t.name or "")[:40],
+                "content": (t.description or t.name or "")[:120],
+                "importance": 0.7,
+                "date": t.created_at.strftime("%Y-%m-%d") if t.created_at else "",
+                "source_id": t.id, "source_type": "team",
+                "emotion": "neutral",
+                "lasting": 0.6,
+            })
+            node_by_key[key] = nodes[-1]
 
         # ── 长期影响动态计算：该节点主题在「后来的记录」中被反复提及的程度
-        #    （后来的生活越频繁回响某个记忆点，它的颜色越亮——颜色随生活演化） ──
-        import re as _re
+        #    （后来的生活越频繁回响某个记忆点，它的颜色越亮——颜色随生活演化）
+        #    倒排索引优化：只统计每个节点 IDF 最高的 4 个主题词在后文节点中的出现次数 ──
+        import math as _math
+        from collections import defaultdict as _dd
 
         def _grams(text: str) -> set:
             grams: set = set()
@@ -1470,28 +1533,38 @@ async def api_starmap(request: Request):
                         grams.add(seg[i:i + 2])
             return grams
 
+        node_texts = {key: _grams(node["content"]) for key, node in node_by_key.items()}
+        # 词 → 出现节点列表（倒排）
+        inv: dict = _dd(list)
+        for key, words in node_texts.items():
+            for w in words:
+                inv[w].append(key)
+        n_all = max(1, len(node_by_key))
+        idf = {w: _math.log((n_all + 1) / (1 + len(v))) + 1 for w, v in inv.items()}
+
         dated_nodes = sorted(
-            [(node["date"], node) for node in nodes if node["date"]],
+            [(node["date"], key) for key, node in node_by_key.items() if node["date"]],
             key=lambda x: x[0],
         )
-        # 对每个节点，统计其主题（2-gram）在其后所有节点中的出现次数
-        for i, (d1, node) in enumerate(dated_nodes):
-            node_grams = _grams(node["content"])
-            if not node_grams:
+        date_idx = {key: i for i, (_, key) in enumerate(dated_nodes)}
+        for _, key in dated_nodes:
+            words = node_texts[key]
+            if not words:
                 continue
+            node = node_by_key[key]
+            top = sorted(words, key=lambda w: -idf.get(w, 0))[:4]
             echo = 0
-            for d2, later in dated_nodes[i + 1:]:
-                if later["type"] == node["type"] and later["id"] == node["id"]:
-                    continue
-                shared = node_grams & _grams(later["content"])
-                if shared:
-                    echo += min(len(shared), 3)
+            for w in top:
+                for later_key in inv.get(w, []):
+                    if later_key == key:
+                        continue
+                    # 只统计"后来的"节点（时间更晚），且类型相同主题才互相关联
+                    if date_idx.get(later_key, -1) > date_idx.get(key, -1):
+                        echo += 1
             # lasting = 基础重要度 × 0.6 + 后续回响 × 0.4（回响越多颜色越亮）
-            node["lasting"] = round(min(1.0, node.get("lasting", 0.5) * 0.6 + min(echo, 6) * 0.07), 2)
+            node["lasting"] = round(min(1.0, node.get("lasting", 0.5) * 0.6 + min(echo, 8) * 0.05), 2)
 
         # ── 关联边 ──
-        import re as _re
-
         links: list[dict] = []
         seen_edges: set = set()
 
@@ -1502,65 +1575,84 @@ async def api_starmap(request: Request):
             seen_edges.add(key)
             links.append({"source": a, "target": b, "weight": weight})
 
-        # 1) 记忆 ↔ 来源（事件/记录）
-        for key, node in node_by_key.items():
-            if node["type"] == "memory" and node.get("source_id"):
-                src_key = f"{node['source_type']}:{node['source_id']}"
-                if src_key in node_by_key:
-                    _add_edge(key, src_key, 0.9)
-
-        # 2) 时间邻近（同年同月的事件/记录各自连成时间链，且事件↔同月记录相连）
+        # 1) 时间邻近（同月记忆连成时间链；事件按时间序相邻；事件↔同月记忆相连）
         time_buckets: dict = {}
         for key, node in node_by_key.items():
-            if node["type"] in ("event", "record"):
+            if node["type"] in ("event", "memory"):
                 month = node["date"][:7]
                 time_buckets.setdefault(month, []).append(key)
         for month, keys in time_buckets.items():
-            events = [k for k in keys if node_by_key[k]["type"] == "event"]
-            records = [k for k in keys if node_by_key[k]["type"] == "record"]
-            for i in range(len(events) - 1):
-                _add_edge(events[i], events[i + 1], 0.5)
-            for i in range(len(records) - 1):
-                _add_edge(records[i], records[i + 1], 0.35)
-            # 事件与同月记录相连（当月发生的事 ↔ 当月的日记）
-            for ek in events[:2]:
-                for rk in records[:2]:
-                    _add_edge(ek, rk, 0.4)
+            events_in = [k for k in keys if node_by_key[k]["type"] == "event"]
+            mems_in = [k for k in keys if node_by_key[k]["type"] == "memory"]
+            for i in range(len(events_in) - 1):
+                _add_edge(events_in[i], events_in[i + 1], 0.5)
+            for i in range(len(mems_in) - 1):
+                _add_edge(mems_in[i], mems_in[i + 1], 0.35)
+            # 事件与同月记忆相连（当月发生的事 ↔ 当月的记忆，每个事件最多 3 条）
+            for ek in events_in[:3]:
+                for mk in mems_in[:3]:
+                    _add_edge(ek, mk, 0.4)
 
-        # 3) 关键词共现（2-gram 特征，共享 ≥2 个双字组连边，k-NN 每节点最多 5 条）
-        #    跨类型主题连接（记忆↔记录、记录↔事件）让布局混合自然，不再两团分居
-        def _words(text: str) -> set:
-            grams: set = set()
-            for seg in _re.split(r"[\s，。、！？；：,.!?;:（）()「」]+", text or ""):
-                seg = seg.strip()
-                if len(seg) == 1:
+        # 2) 主题共现（倒排 + IDF：每节点取区分度最高的 6 个词，在候选池内找共享 ≥2 词的对）
+        #    只作用于 记忆↔记忆 / 记忆↔事件 / 事件↔事件（模拟/点击/组队内容无主题意义，不参与）
+        link_count: dict = _dd(int)
+        thematic = {k for k, n in node_by_key.items() if n["type"] in ("memory", "event")}
+        for key in thematic:
+            if link_count[key] >= 4:
+                continue
+            words = node_texts[key]
+            top = sorted(words, key=lambda w: -idf.get(w, 0))[:6]
+            cands: set = set()
+            for w in top:
+                cands.update(inv.get(w, []))
+            cands.intersection_update(thematic)
+            cands.discard(key)
+            for b in cands:
+                if link_count[key] >= 4 or link_count.get(b, 0) >= 4:
                     continue
-                if len(seg) <= 4:
-                    grams.add(seg)
-                else:
-                    for i in range(len(seg) - 1):
-                        grams.add(seg[i:i + 2])
-            return grams
-
-        node_texts = {key: _words(node["content"]) for key, node in node_by_key.items()}
-        link_count: dict = {}
-        keys_list = list(node_by_key.keys())
-        for i, a in enumerate(keys_list):
-            for b in keys_list[i + 1:]:
-                if link_count.get(a, 0) >= 5 or link_count.get(b, 0) >= 5:
-                    continue
-                shared = node_texts[a] & node_texts[b]
+                shared = words & node_texts[b]
                 if len(shared) >= 2:
-                    _add_edge(a, b, min(0.65, 0.3 + 0.07 * len(shared)))
-                    link_count[a] = link_count.get(a, 0) + 1
-                    link_count[b] = link_count.get(b, 0) + 1
+                    _add_edge(key, b, min(0.65, 0.3 + 0.07 * len(shared)))
+                    link_count[key] += 1
+                    link_count[b] += 1
 
-        return JSONResponse({
+        # 3) 模拟路径 ↔ 时间上最近的记忆（未来的路从最近的经历里生长出来）
+        dated_mems = sorted(
+            [(node["date"], key) for key, node in node_by_key.items()
+             if node["type"] in ("memory", "event") and node["date"]]
+        )
+        if dated_mems:
+            import bisect as _bisect
+            mem_dates = [d for d, _ in dated_mems]
+            for key, node in node_by_key.items():
+                if node["type"] != "simulation":
+                    continue
+                i = _bisect.bisect_right(mem_dates, node["date"]) - 1
+                _add_edge(key, dated_mems[max(0, i)][1], 0.5)
+            # 4) 组队 ↔ 创建时间最近的记忆
+            for key, node in node_by_key.items():
+                if node["type"] != "team":
+                    continue
+                i = _bisect.bisect_right(mem_dates, node["date"]) - 1
+                _add_edge(key, dated_mems[max(0, i)][1], 0.45)
+
+        # 类型统计（按节点统计，避免局部变量遮蔽）
+        type_counts: dict = _dd(int)
+        for n in nodes:
+            type_counts[n["type"]] += 1
+        payload = {
             "nodes": nodes,
             "links": links,
-            "stats": {"nodes": len(nodes), "links": len(links),
-                      "memories": len(memories), "events": len(events), "records": len(records)},
-        })
+            "stats": {
+                "nodes": len(nodes), "links": len(links),
+                "memories": type_counts["memory"], "events": type_counts["event"],
+                "records": len(memories),  # 记忆浓缩自 records 条日记（不上星，仅统计）
+                "simulations": type_counts["simulation"],
+                "clicks": type_counts["click"], "teams": type_counts["team"],
+            },
+        }
+        _starmap_cache[uid] = (_time.time(), payload)
+        return JSONResponse(payload)
 
 
 # ── 人生参考 ──────────────────────────────────────────
