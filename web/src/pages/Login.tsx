@@ -141,7 +141,6 @@ export default function Login() {
 
       <div className="card" style={{ width: 400, padding: 32 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <p style={{ fontSize: "2.5rem", marginBottom: 4 }}>🪞</p>
           <h1 style={{ fontSize: "1.3rem", fontWeight: 700 }}>镜·界·联</h1>
           <p style={{ fontSize: "0.75rem", color: "var(--text4)", marginTop: 4 }}>认识自己 · 走向世界 · 与他人共同创造</p>
         </div>

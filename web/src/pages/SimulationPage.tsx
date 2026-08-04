@@ -115,7 +115,7 @@ export default function SimulationPage() {
             </div>
           ) : (
             <div className="card p-16 text-center">
-              <div className="text-6xl mb-5">🪞</div>
+              <div className="text-6xl mb-5"></div>
               <h3 className="text-xl font-semibold text-gray-400 mb-2">发现未来的自己</h3>
               <p className="text-sm text-gray-500 mb-3 max-w-md mx-auto">
                 AI 会从你的数字人格、ChromaDB 长期记忆和关键经历中，自动发现你可能的成长方向
@@ -145,7 +145,7 @@ export default function SimulationPage() {
           {/* 核心理念 */}
           <div className="card p-4 mb-5 bg-gradient-to-br from-indigo-500/3 to-purple-500/3 border-indigo-500/10">
             <p className="text-sm text-gray-400 leading-relaxed">
-              <span className="#8b5e3c">🪞</span>{" "}
+              <span className="#8b5e3c"></span>{" "}
               AI 不会预测你的未来，而是基于你的经历、记忆和价值倾向，生成几个可能成长出的未来自我，供你探索。
             </p>
           </div>
@@ -225,11 +225,11 @@ export default function SimulationPage() {
             <div className="card p-4 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 border-indigo-500/10">
               <p className="text-xs text-gray-400 mb-2 font-medium">AI 将基于以下真实数据生成未来镜像：</p>
               <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                <div className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 过去的人生记录</div>
-                <div className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 重要人生事件</div>
-                <div className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 当前数字人格画像</div>
-                <div className="flex items-center gap-1.5"><span className="text-emerald-400">✓</span> 长期目标与兴趣</div>
-                <div className="flex items-center gap-1.5 col-span-2"><span className="text-emerald-400">✓</span> ChromaDB 长期语义记忆</div>
+                <div className="flex items-center gap-1.5"><span className="text-emerald-400"></span> 过去的人生记录</div>
+                <div className="flex items-center gap-1.5"><span className="text-emerald-400"></span> 重要人生事件</div>
+                <div className="flex items-center gap-1.5"><span className="text-emerald-400"></span> 当前数字人格画像</div>
+                <div className="flex items-center gap-1.5"><span className="text-emerald-400"></span> 长期目标与兴趣</div>
+                <div className="flex items-center gap-1.5 col-span-2"><span className="text-emerald-400"></span> ChromaDB 长期语义记忆</div>
               </div>
             </div>
 

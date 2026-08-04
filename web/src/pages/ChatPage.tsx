@@ -88,7 +88,7 @@ export default function ChatPage() {
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px", display: "grid", gridTemplateColumns: "1fr 280px", gap: 20 }}>
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <h1 style={{ fontSize: "1.3rem", fontWeight: 700 }}>💬 团队聊天</h1>
+          <h1 style={{ fontSize: "1.3rem", fontWeight: 700 }}>团队聊天</h1>
           {(["group", "team"] as const).map((t) => (
             <button key={t} className="badge" style={{
               cursor: "pointer",
@@ -142,7 +142,7 @@ export default function ChatPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {/* AI 助手 */}
         <div className="card">
-          <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: 8 }}>🤖 DeepSeek 协作助手</h3>
+          <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: 8 }}>DeepSeek 协作助手</h3>
           <textarea className="input" rows={3} placeholder="问团队相关的问题..." value={aiInput} onChange={(e) => setAiInput(e.target.value)} />
           <button className="btn" style={{ width: "100%", marginTop: 8 }} onClick={aiChat} disabled={aiLoading}>
             {aiLoading ? "思考中..." : "提问"}
@@ -159,7 +159,7 @@ export default function ChatPage() {
 
         {/* 潜在队友 */}
         <div className="card">
-          <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: 10 }}>👥 潜在队友</h3>
+          <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: 10 }}>潜在队友</h3>
           {friends.length === 0 && <p style={{ fontSize: "0.75rem", color: "var(--text4)" }}>暂无推荐</p>}
           {friends.map((f) => (
             <div key={f.user_id} style={{ padding: "8px 0", borderBottom: "1px solid var(--border)" }}>

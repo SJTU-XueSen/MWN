@@ -52,7 +52,7 @@ export default function FutureChatPage() {
   return (
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "32px 24px", display: "grid", gridTemplateColumns: "240px 1fr", gap: 20, minHeight: "70vh" }}>
       <div>
-        <h1 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 12 }}>💬 未来对话</h1>
+        <h1 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 12 }}>未来对话</h1>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {futures.length === 0 && (
             <p style={{ fontSize: "0.78rem", color: "var(--text4)", lineHeight: 1.7 }}>
@@ -73,7 +73,7 @@ export default function FutureChatPage() {
                 borderColor: selected?.id === f.id ? "var(--accent-border2)" : "var(--border)",
               }}
             >
-              <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text2)" }}>🪞 {f.label}</p>
+              <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text2)" }}>{f.label}</p>
               <p style={{ fontSize: "0.68rem", color: "var(--text4)", marginTop: 3 }}>{f.target_year} 年 · 置信度 {Math.round((f.confidence || 0) * 100)}%</p>
             </button>
           ))}
@@ -89,7 +89,7 @@ export default function FutureChatPage() {
           <>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <p style={{ fontWeight: 700, fontSize: "0.9rem" }}>🪞 {selected.label}</p>
+                <p style={{ fontWeight: 700, fontSize: "0.9rem" }}>{selected.label}</p>
                 {selected.basis && <p style={{ fontSize: "0.68rem", color: "var(--text4)", marginTop: 2 }}>{selected.basis}</p>}
               </div>
               <button className="btn-ghost" style={{ padding: "4px 12px", fontSize: "0.7rem" }} onClick={clearChat}>清空</button>

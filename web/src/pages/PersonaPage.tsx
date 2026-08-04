@@ -67,7 +67,7 @@ export default function PersonaPage() {
 
           {/* 人格类型 + 置信度 */}
           <div className="card p-6 mb-5 bg-gradient-to-br from-indigo-500/8 to-purple-500/8 border-indigo-500/20 text-center">
-            <div className="text-5xl mb-3">🧬</div>
+            <div className="text-5xl mb-3"></div>
             <h3 className="text-2xl font-bold text-white">{persona.persona_type || "探索中"}</h3>
             <p className="#475569 mt-2 max-w-lg mx-auto">{persona.persona_summary || persona.summary}</p>
             <div style={{ marginTop: 10, display: "flex", justifyContent: "center", gap: 8 }}>
@@ -85,7 +85,7 @@ export default function PersonaPage() {
 
           {/* 五维人格评分总览 */}
           <div className="card p-5 mb-5">
-            <h4 className="text-sm font-semibold text-gray-400 mb-4 text-center">📊 五维人格评分</h4>
+            <h4 className="text-sm font-semibold text-gray-400 mb-4 text-center">五维人格评分</h4>
             <div className="grid grid-cols-5 gap-3 text-center">
               {[
                 { label: "能力", icon: "💪", data: persona.ability_profile || persona.ability || {}, color: "from-indigo-500 to-purple-500" },
@@ -121,7 +121,7 @@ export default function PersonaPage() {
             {(persona.ability_profile || persona.ability) && Object.keys(persona.ability_profile || persona.ability || {}).length > 0 && (
               <div className="card p-5">
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
-                  <span>💪</span> 能力画像
+                  <span></span> 能力画像
                   <span style={{ marginLeft: "auto" }}>
                     <EvidenceButton query={"能力画像" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
                   </span>
@@ -147,7 +147,7 @@ export default function PersonaPage() {
             {(persona.interest_profile || persona.interest) && Object.keys(persona.interest_profile || persona.interest || {}).length > 0 && (
               <div className="card p-5">
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
-                  <span>🎯</span> 兴趣画像
+                  <span></span> 兴趣画像
                   <span style={{ marginLeft: "auto" }}>
                     <EvidenceButton query={"兴趣画像" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
                   </span>
@@ -173,7 +173,7 @@ export default function PersonaPage() {
             {(persona.value_profile || persona.value) && Object.keys(persona.value_profile || persona.value || {}).length > 0 && (
               <div className="card p-5">
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
-                  <span>💎</span> 价值观画像
+                  <span></span> 价值观画像
                   <span style={{ marginLeft: "auto" }}>
                     <EvidenceButton query={"价值观画像" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
                   </span>
@@ -193,7 +193,7 @@ export default function PersonaPage() {
             {(persona.decision_style || persona.decision) && (
               <div className="card p-5">
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
-                  <span>🧭</span> 决策风格
+                  <span></span> 决策风格
                   <span style={{ marginLeft: "auto" }}>
                     <EvidenceButton query={"决策风格" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
                   </span>
@@ -215,7 +215,7 @@ export default function PersonaPage() {
             {(persona.behavior_profile || persona.behavior) && Object.keys(persona.behavior_profile || persona.behavior || {}).length > 0 && (
               <div className="card p-5">
                 <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
-                  <span>🔄</span> 行为模式
+                  <span></span> 行为模式
                   <span style={{ marginLeft: "auto" }}>
                     <EvidenceButton query={"行为模式" + (persona.persona_type || "")} targetType="persona" targetId={persona.id} label="为什么" size="xs" />
                   </span>
@@ -241,7 +241,7 @@ export default function PersonaPage() {
             {history && history.length > 1 && (
               <div className="card p-5 col-span-2">
                 <h4 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
-                  <span>📜</span> 画像版本历史
+                  <span></span> 画像版本历史
                   <span className="text-xs text-gray-600 ml-1">选择两个版本可对比成长变化</span>
                 </h4>
                 <div className="flex items-center gap-2 overflow-x-auto pb-2">
@@ -296,8 +296,7 @@ export default function PersonaPage() {
 
                 {compareData && compareData.diff && (
                   <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--accent-bg2)", border: "1px solid var(--accent-border)" }}>
-                    <p style={{ fontSize: "0.8rem", fontWeight: 700, marginBottom: 8 }}>
-                      📈 v{compareData.older.version}（{Math.round((compareData.older.confidence || 0) * 100)}%）→ v{compareData.newer.version}（{Math.round((compareData.newer.confidence || 0) * 100)}%）
+                    <p style={{ fontSize: "0.8rem", fontWeight: 700, marginBottom: 8 }}>v{compareData.older.version}（{Math.round((compareData.older.confidence || 0) * 100)}%）→ v{compareData.newer.version}（{Math.round((compareData.newer.confidence || 0) * 100)}%）
                     </p>
                     {compareData.diff.length === 0 && (
                       <p style={{ fontSize: "0.75rem", color: "var(--text4)" }}>五维画像无明显变化——数据仍在积累中</p>
@@ -339,7 +338,7 @@ export default function PersonaPage() {
       ) : (
         /* 空状态 —— 还没有画像 */
         <div className="card p-16 text-center">
-          <div className="text-6xl mb-5">🧬</div>
+          <div className="text-6xl mb-5"></div>
           <h3 className="text-xl font-semibold text-gray-400 mb-2">尚未生成数字人格</h3>
           <p className="text-sm text-gray-500 mb-3">
             AI 需要积累了足够的人生数据后，才能为你生成准确的数字人格画像

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronRight, Compass, ExternalLink, Globe, Sparkles, Sprout, Users } from "lucide-react";
 
 // ── 折叠活动（与 Activities 页共享 localStorage key） ──
 const COLLAPSED_KEY = "collapsed_activities";
@@ -225,10 +225,10 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* ═══════ 1. 🪞 当前的我 ═══════ */}
+      {/* ═══════ 1.当前的我 ═══════ */}
       <section style={{ marginBottom: 36 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-          <span style={{ fontSize: "1rem" }}>🪞</span>
+          <Sparkles size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
           <h2 style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text)" }}>当前的我</h2>
         </div>
 
@@ -237,7 +237,7 @@ export default function Dashboard() {
 
             {/* ── 镜像观察 ── */}
             <div style={{ marginBottom: 16 }}>
-              <span style={{ display: "inline-block", padding: "4px 14px", borderRadius: 6, fontSize: "0.8rem", fontWeight: 700, color: "var(--accent)", background: "var(--accent-bg3)", border: "1px solid var(--accent-border2)", marginBottom: 10 }}>🧬 {personaType}{confidence < 0.5 ? "倾向" : ""}</span>
+              <span style={{ display: "inline-block", padding: "4px 14px", borderRadius: 6, fontSize: "0.8rem", fontWeight: 700, color: "var(--accent)", background: "var(--accent-bg3)", border: "1px solid var(--accent-border2)", marginBottom: 10 }}>{personaType}{confidence < 0.5 ? "倾向" : ""}</span>
 
               <p style={{ fontSize: "0.84rem", color: "var(--text)", lineHeight: 1.7, marginBottom: 4 }}>
                 当前 AI 观察到：
@@ -254,7 +254,7 @@ export default function Dashboard() {
             {/* ── 数字人格形成度 ── */}
             <div style={{ padding: "16px 20px", borderRadius: 12, background: "var(--accent-bg2)", border: "1px solid var(--accent-border)", marginBottom: 18 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text)" }}>🧬 数字人格形成度</span>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text)" }}>数字人格形成度</span>
                 <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--accent)" }}>{confidencePct}%</span>
               </div>
               <div style={{ height: 6, background: "rgba(0,0,0,0.06)", borderRadius: 3, overflow: "hidden", marginBottom: 6 }}>
@@ -329,7 +329,6 @@ export default function Dashboard() {
           </div>
         ) : (
           <div style={{ padding: "32px 24px", borderRadius: 16, textAlign: "center", background: "linear-gradient(135deg, var(--accent-bg2), rgba(0,0,0,0.02))", border: "1px solid var(--accent-border)" }}>
-            <p style={{ fontSize: "2.4rem", marginBottom: 10 }}>🪞</p>
             <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text2)", marginBottom: 4 }}>镜像尚未形成</p>
             <p style={{ fontSize: "0.76rem", color: "var(--text4)", marginBottom: 14 }}>记录人生经历后，AI 将从你的行为模式中构建属于你的人格镜像</p>
             <a href="/journal" style={{ display: "inline-block", padding: "8px 20px", borderRadius: 8, fontSize: "0.82rem", background: "rgba(99,102,241,0.2)", color: "var(--accent)", textDecoration: "none", border: "1px solid rgba(99,102,241,0.25)" }}>开始记录 →</a>
@@ -339,10 +338,10 @@ export default function Dashboard() {
 
       {hasPersona && <FlowArrow />}
 
-      {/* ═══════ 2. 🌱 可能的我 ═══════ */}
+      {/* ═══════ 2.可能的我 ═══════ */}
       <section style={{ marginBottom: 36 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <span style={{ fontSize: "1rem" }}>🌱</span>
+          <Sprout size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
           <h2 style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text)" }}>可能的我</h2>
         </div>
         <p style={{ fontSize: "0.7rem", color: "var(--text4)", marginBottom: 14, lineHeight: 1.5 }}>
@@ -393,10 +392,10 @@ export default function Dashboard() {
 
       {hasPersona && <FlowArrow />}
 
-      {/* ═══════ 3. 🗺 我与世界 ═══════ */}
+      {/* ═══════ 3.我与世界 ═══════ */}
       <section style={{ marginBottom: 36 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <span style={{ fontSize: "1rem" }}>🗺</span>
+          <Globe size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
           <h2 style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text)" }}>我与世界</h2>
           {hasPersona && <span style={{ fontSize: "0.68rem", color: "var(--text4)" }}>— 世界回应你的镜像</span>}
         </div>
@@ -418,8 +417,7 @@ export default function Dashboard() {
             {/* ── 组队活动（可加入战队共同创造） ── */}
             {worldComps.length > 0 && (
               <>
-                <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text4)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
-                  🏳️ 组队活动
+                <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text4)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>组队活动
                 </p>
                 {worldComps.map((c: any, i: number) => {
                   // 详细适配度：去模板化维度子集（与 SJTU 活动一致）
@@ -449,7 +447,7 @@ export default function Dashboard() {
                               {c.registration_deadline && <span>⏰ {daysLeft(c.registration_deadline)}</span>}
                               <span>{c.team_count} 支战队</span>
                               {c.max_team_size && <span>最多 {c.max_team_size} 人</span>}
-                              {c.credit_info && <span>💎 {c.credit_info}</span>}
+                              {c.credit_info && <span>{c.credit_info}</span>}
                             </div>
                             {(hasDims || c.match_reason) && (
                               <div style={{ padding: "8px 12px", borderRadius: 6, background: "rgba(139,92,246,0.05)", border: "1px solid rgba(139,92,246,0.1)" }}>
@@ -462,13 +460,12 @@ export default function Dashboard() {
                                         <span style={{ fontSize: "0.68rem", color: "#34D399", letterSpacing: "0.05em" }}>{stars(v)}</span>
                                       </div>
                                     ))}
-                                    <p style={{ fontSize: "0.64rem", color: "var(--text4)", lineHeight: 1.4, marginTop: 4 }}>
-                                      💡 活动不匹配现在的你，而是匹配你可能成长的方向——你的{signalLabel(dims[0][0])}和{signalLabel(dims[1][0])}在这里有发挥空间。
+                                    <p style={{ fontSize: "0.64rem", color: "var(--text4)", lineHeight: 1.4, marginTop: 4 }}>活动不匹配现在的你，而是匹配你可能成长的方向——你的{signalLabel(dims[0][0])}和{signalLabel(dims[1][0])}在这里有发挥空间。
                                     </p>
                                   </>
                                 )}
                                 {c.match_reason && (
-                                  <p style={{ fontSize: "0.64rem", color: "var(--text3)", lineHeight: 1.5 }}>💡 {c.match_reason}</p>
+                                  <p style={{ fontSize: "0.64rem", color: "var(--text3)", lineHeight: 1.5 }}>{c.match_reason}</p>
                                 )}
                               </div>
                             )}
@@ -481,8 +478,7 @@ export default function Dashboard() {
                         title="折叠"
                         style={{ position: "absolute", top: 8, right: 8, border: "none", background: "var(--surface2)", color: "var(--text4)", cursor: "pointer", width: 22, height: 22, borderRadius: 6, fontSize: "0.7rem", opacity: hoverId === String(c.id) ? 1 : 0, transition: "opacity 0.15s" }}
                       >
-                        ✕
-                      </button>
+                        </button>
                     </div>
                   );
                 })}
@@ -492,8 +488,7 @@ export default function Dashboard() {
             {/* ── SJTU 校园通知 ── */}
             {worldActs.length > 0 && (
               <>
-                <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text4)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
-                  📅 SJTU 校园通知
+                <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text4)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>SJTU 校园通知
                 </p>
                 {worldActs.map((a: any, i: number) => {
                   const offset = i * 2;
@@ -532,13 +527,12 @@ export default function Dashboard() {
                                         <span style={{ fontSize: "0.68rem", color: "#34D399", letterSpacing: "0.05em" }}>{stars(v)}</span>
                                       </div>
                                     ))}
-                                    <p style={{ fontSize: "0.64rem", color: "var(--text4)", lineHeight: 1.4, marginTop: 4 }}>
-                                      💡 活动不匹配现在的你，而是匹配你可能成长的方向——你的{signalLabel(dims[0][0])}和{signalLabel(dims[1][0])}在这里有发挥空间。
+                                    <p style={{ fontSize: "0.64rem", color: "var(--text4)", lineHeight: 1.4, marginTop: 4 }}>活动不匹配现在的你，而是匹配你可能成长的方向——你的{signalLabel(dims[0][0])}和{signalLabel(dims[1][0])}在这里有发挥空间。
                                     </p>
                                   </>
                                 )}
                                 {a.match_reason && (
-                                  <p style={{ fontSize: "0.64rem", color: "var(--text3)", lineHeight: 1.5 }}>💡 {a.match_reason}</p>
+                                  <p style={{ fontSize: "0.64rem", color: "var(--text3)", lineHeight: 1.5 }}>{a.match_reason}</p>
                                 )}
                               </div>
                             )}
@@ -551,8 +545,7 @@ export default function Dashboard() {
                         title="折叠"
                         style={{ position: "absolute", top: 8, right: 8, border: "none", background: "var(--surface2)", color: "var(--text4)", cursor: "pointer", width: 22, height: 22, borderRadius: 6, fontSize: "0.7rem", opacity: hoverId === String(a.id) ? 1 : 0, transition: "opacity 0.15s" }}
                       >
-                        ✕
-                      </button>
+                        </button>
                     </div>
                   );
                 })}
@@ -568,10 +561,10 @@ export default function Dashboard() {
 
       {hasPersona && <FlowArrow />}
 
-      {/* ═══════ 4. 🤝 我和他人 ═══════ */}
+      {/* ═══════ 4.我和他人 ═══════ */}
       <section style={{ marginBottom: 36 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <span style={{ fontSize: "1rem" }}>🤝</span>
+          <Users size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
           <h2 style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text)" }}>我和他人</h2>
         </div>
         <p style={{ fontSize: "0.7rem", color: "var(--text4)", marginBottom: 14, lineHeight: 1.5 }}>
@@ -638,8 +631,7 @@ export default function Dashboard() {
                           .then(r => r.json())
                           .then(res => alert(res.error || `已向对方发送「${myTeams[0].team_name}」的组队邀请`));
                       }}
-                    >
-                      🤝 邀请组队
+                    >邀请组队
                     </button>
                   </div>
                 ))}
@@ -666,11 +658,11 @@ export default function Dashboard() {
 
       {hasPersona && <FlowArrow />}
 
-      {/* ═══════ 5. 🎯 我要走向哪里 ═══════ */}
+      {/* ═══════ 5.我要走向哪里 ═══════ */}
       <section>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: "1rem" }}>🎯</span>
+            <Compass size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
             <h2 style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text)" }}>我要走向哪里</h2>
           </div>
           <a href="/goals" style={{ fontSize: "0.72rem", color: "var(--accent)", textDecoration: "none" }}>管理 →</a>
@@ -687,7 +679,7 @@ export default function Dashboard() {
                 <div className="card" key={g.id} style={{ padding: "14px 18px", borderRadius: 12 }}>
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: "0.9rem" }}>🎯</span>
+                      <Target size={15} style={{ color: "var(--accent)", flexShrink: 0 }} />
                       <div>
                         <p style={{ fontSize: "0.84rem", fontWeight: 600, color: "var(--text)" }}>{g.title}</p>
                         <p style={{ fontSize: "0.66rem", color: "var(--text4)" }}>重要度 {g.importance}%{g.period ? " · " + g.period : ""}</p>

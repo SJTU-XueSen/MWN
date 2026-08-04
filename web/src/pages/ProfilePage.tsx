@@ -38,7 +38,6 @@ export default function ProfilePage() {
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "32px 24px" }}>
       <div className="card" style={{ textAlign: "center", marginBottom: 16 }}>
-        <p style={{ fontSize: "3rem", marginBottom: 8 }}>🪞</p>
         <h1 style={{ fontSize: "1.3rem", fontWeight: 700 }}>{settings?.real_name || profile.real_name || profile.username}</h1>
         <p style={{ color: "var(--text4)", fontSize: "0.8rem", marginTop: 4 }}>@{profile.username} · {settings?.email || profile.email}</p>
         {settings?.university && <p style={{ color: "var(--text4)", fontSize: "0.78rem", marginTop: 4 }}>{settings.university} · {settings.major} · {settings.grade}</p>}
@@ -47,7 +46,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="card">
-        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 4 }}>🛠 技能标签</h3>
+        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 4 }}>技能标签</h3>
         <p style={{ fontSize: "0.72rem", color: "var(--text4)", marginBottom: 12 }}>
           用于潜在队友匹配与任务技能评估（点击切换）
         </p>
@@ -72,7 +71,7 @@ export default function ProfilePage() {
             );
           })}
         </div>
-        {saved && <p style={{ color: "#34D399", fontSize: "0.8rem", marginBottom: 8 }}>✓ 已保存</p>}
+        {saved && <p style={{ color: "#34D399", fontSize: "0.8rem", marginBottom: 8 }}>已保存</p>}
         <button className="btn" onClick={saveSkills}>保存技能标签</button>
       </div>
     </div>

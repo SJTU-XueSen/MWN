@@ -65,7 +65,7 @@ export default function SimulationDetail() {
       </div>
 
       <div className="mb-5 text-center">
-        <p className="text-sm text-gray-500"><span className="#475569">🪞</span> 这些未来版本并不是预测的命运，而是基于你过去的经历、行为习惯和价值倾向生成的<strong className="#475569">"可能的自己"</strong>。未来不会被决定，但你可以提前观察不同选择下可能成长出的自己。</p>
+        <p className="text-sm text-gray-500"><span className="#475569"></span> 这些未来版本并不是预测的命运，而是基于你过去的经历、行为习惯和价值倾向生成的<strong className="#475569">"可能的自己"</strong>。未来不会被决定，但你可以提前观察不同选择下可能成长出的自己。</p>
       </div>
 
       {paths.length > 0 ? (
@@ -156,7 +156,7 @@ export default function SimulationDetail() {
 
                 {path.turning_points && (
                   <div className="mb-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
-                    <p className="text-xs text-amber-400 mb-2">⚡ 可能的成长课题</p>
+                    <p className="text-xs text-amber-400 mb-2">可能的成长课题</p>
                     <div className="space-y-1.5">
                       {path.turning_points.map((tp: string, i: number) => (
                         <div key={i} className="flex items-start gap-2"><span className="text-xs text-amber-400/60">~</span><span className="text-xs text-gray-400">{tp}</span></div>

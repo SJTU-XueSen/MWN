@@ -25,7 +25,7 @@ export default function AiSearch() {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 24px" }}>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 4 }}>🔍 AI 检索</h1>
+      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 4 }}>AI 检索</h1>
       <p style={{ color: "var(--text4)", fontSize: "0.8rem", marginBottom: 20 }}>
         DeepSeek 语义匹配——描述你感兴趣的方向，AI 推荐校园活动与知名竞赛
       </p>
@@ -43,7 +43,6 @@ export default function AiSearch() {
 
       {loading && (
         <div className="card" style={{ textAlign: "center", padding: 48 }}>
-          <p style={{ fontSize: "2rem", marginBottom: 12 }}>🤖</p>
           <p style={{ color: "var(--text3)" }}>AI 正在分析你的兴趣与活动匹配度...</p>
         </div>
       )}
@@ -64,7 +63,7 @@ export default function AiSearch() {
                 </div>
                 <p style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: 6 }}>{r.title}</p>
                 <p style={{ fontSize: "0.78rem", color: "var(--text3)", lineHeight: 1.6, marginBottom: 8 }}>{r.summary}</p>
-                <p style={{ fontSize: "0.72rem", color: "var(--accent)" }}>🎯 {r.matchReason}</p>
+                <p style={{ fontSize: "0.72rem", color: "var(--accent)" }}>{r.matchReason}</p>
                 {r.url && (
                   <a href={r.url} target="_blank" rel="noreferrer" style={{ fontSize: "0.72rem", color: "var(--text4)", display: "block", marginTop: 6 }}>
                     查看详情 →

@@ -103,7 +103,7 @@ export default function EventDetail() {
       {/* AI 分析面板 */}
       <div className="card p-6 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 border-indigo-500/20">
         <div className="flex items-center gap-2 mb-5">
-          <span className="text-xl">🤖</span>
+          <span className="text-xl"></span>
           <h3 className="font-semibold text-white">AI 分析结果</h3>
           <span className="text-xs text-gray-500 ml-2">自动生成</span>
         </div>
@@ -114,11 +114,11 @@ export default function EventDetail() {
             <p className="text-xs text-gray-500 mb-2">情绪倾向</p>
             <p className="text-lg">
               {event.emotion?.value === "positive" || event.emotion === "positive" ? (
-                <span className="text-emerald-400">😊 积极</span>
+                <span className="text-emerald-400">积极</span>
               ) : event.emotion?.value === "negative" || event.emotion === "negative" ? (
-                <span className="text-rose-400">😔 消极</span>
+                <span className="text-rose-400">消极</span>
               ) : (
-                <span className="#475569">😐 中性</span>
+                <span className="#475569">中性</span>
               )}
             </p>
             {analysis?.emotion_detail && (
@@ -226,13 +226,13 @@ export default function EventDetail() {
           <div className="grid grid-cols-2 gap-4 mt-3">
             {analysis.encouragement && (
               <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                <p className="text-xs text-emerald-400 mb-1">💚 鼓励</p>
+                <p className="text-xs text-emerald-400 mb-1">鼓励</p>
                 <p className="text-sm text-gray-200 leading-relaxed">{analysis.encouragement}</p>
               </div>
             )}
             {analysis.outlook && (
               <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
-                <p className="text-xs text-indigo-400 mb-1">🔭 展望</p>
+                <p className="text-xs text-indigo-400 mb-1">展望</p>
                 <p className="text-sm text-gray-200 leading-relaxed">{analysis.outlook}</p>
               </div>
             )}
@@ -242,7 +242,7 @@ export default function EventDetail() {
         {/* 诚实反思 */}
         {analysis?.honest_reflection && (
           <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 mt-3">
-            <p className="text-xs text-rose-400 mb-1">🪞 诚实的反思</p>
+            <p className="text-xs text-rose-400 mb-1">诚实的反思</p>
             <p className="text-sm text-gray-200 leading-relaxed">{analysis.honest_reflection}</p>
           </div>
         )}
@@ -252,7 +252,7 @@ export default function EventDetail() {
       {event.memory && (
         <div className="card p-5 mt-4 bg-white/3">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm">🧠</span>
+            <span className="text-sm"></span>
             <h4 className="text-sm font-semibold text-gray-400">关联生命记忆</h4>
           </div>
           <p className="text-sm text-gray-400">{event.memory.memory_content}</p>

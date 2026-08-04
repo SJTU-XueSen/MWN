@@ -63,8 +63,8 @@ export default function SettingsPage() {
 
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", padding: "32px 24px" }}>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 20 }}>⚙️ 设置</h1>
-      {saved && <p style={{ color: "#34D399", fontSize: "0.8rem", marginBottom: 10 }}>✓ 已保存</p>}
+      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 20 }}>设置</h1>
+      {saved && <p style={{ color: "#34D399", fontSize: "0.8rem", marginBottom: 10 }}>已保存</p>}
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 12 }}>个人信息</h3>
@@ -80,7 +80,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 12 }}>🤖 DeepSeek API Key（团队助手用）</h3>
+        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 12 }}>DeepSeek API Key（团队助手用）</h3>
         <input className="input" type="password" placeholder="sk-..." value={dsKey} onChange={(e) => setDsKey(e.target.value)} />
         <p style={{ fontSize: "0.68rem", color: "var(--text4)", marginTop: 6 }}>
           可选——不填则使用系统配置的 Key
@@ -89,13 +89,13 @@ export default function SettingsPage() {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 12 }}>🎤 语音识别热词</h3>
+        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 12 }}>语音识别热词</h3>
         <input className="input" placeholder="逗号分隔，如：强化学习,机器人" value={sttHotwords} onChange={(e) => setSttHotwords(e.target.value)} />
         <button className="btn" style={{ marginTop: 10 }} onClick={saveHotwords}>保存热词</button>
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 10 }}>📊 数据概况</h3>
+        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 10 }}>数据概况</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 8 }}>
           {Object.entries(data.stats || {}).map(([k, v]: any) => (
             <div key={k} style={{ padding: "10px", borderRadius: 10, background: "var(--surface2)", textAlign: "center" }}>

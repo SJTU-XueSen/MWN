@@ -95,7 +95,7 @@ export default function ReportsPage() {
           {/* AI 分析范围 */}
           <div className="card p-4 bg-white/3">
             <div className="flex items-start gap-3">
-              <span className="text-lg">🤖</span>
+              <span className="text-lg"></span>
               <div>
                 <p className="text-sm text-gray-400 font-medium">AI 会分析以下内容</p>
                 <ul className="text-xs text-gray-500 mt-2 space-y-1">
@@ -168,7 +168,7 @@ export default function ReportsPage() {
         </div>
       ) : (
         <div className="card p-16 text-center">
-          <div className="text-6xl mb-5">📊</div>
+          <div className="text-6xl mb-5"></div>
           <h3 className="text-xl font-semibold text-gray-400 mb-2">还没有成长报告</h3>
           <p className="text-sm text-gray-500 mb-8">积累一些日常记录和人生事件后，让 AI 帮你生成第一份成长报告</p>
           <button onClick={openForm} className="btn text-white px-6 py-2.5 rounded-xl text-sm font-semibold inline-block">

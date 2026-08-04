@@ -53,7 +53,7 @@ export default function JournalDetail() {
       {analysis ? (
         <div className="card p-6 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 border-indigo-500/20">
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl">🤖</span>
+            <span className="text-xl"></span>
             <h3 className="font-semibold text-white">AI 分析结果</h3>
             {analysis.engine === "deepseek" ? (
               <span className="tag bg-green-500/20 text-green-400 text-xs ml-1"><i className="fa-solid fa-brain mr-1"></i>DeepSeek</span>
@@ -74,9 +74,9 @@ export default function JournalDetail() {
               <div className="p-3 rounded-xl bg-white/5">
                 <p className="text-xs text-gray-500 mb-1">情绪倾向</p>
                 <p className="text-sm">
-                  {analysis.emotion === "positive" ? <span className="text-emerald-400">😊 积极</span>
-                    : analysis.emotion === "negative" ? <span className="text-rose-400">😔 消极</span>
-                    : <span className="#475569">😐 中性</span>}
+                  {analysis.emotion === "positive" ? <span className="text-emerald-400">积极</span>
+                    : analysis.emotion === "negative" ? <span className="text-rose-400">消极</span>
+                    : <span className="#475569">中性</span>}
                 </p>
                 {analysis.emotion_detail && (
                   <p className="text-xs text-gray-400 mt-1 italic">"{analysis.emotion_detail}"</p>
@@ -149,7 +149,7 @@ export default function JournalDetail() {
 
           {analysis.search_insight && (
             <div className="p-3 rounded-xl bg-amber-500/5 mt-3 border border-amber-500/10">
-              <p className="text-xs text-amber-400 mb-1">🔍 联网搜索洞察</p>
+              <p className="text-xs text-amber-400 mb-1">联网搜索洞察</p>
               <p className="text-sm text-gray-400">{analysis.search_insight}</p>
             </div>
           )}
@@ -158,13 +158,13 @@ export default function JournalDetail() {
             <div className="grid grid-cols-2 gap-4 mt-3">
               {analysis.encouragement && (
                 <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                  <p className="text-xs text-emerald-400 mb-1">💚 鼓励</p>
+                  <p className="text-xs text-emerald-400 mb-1">鼓励</p>
                   <p className="text-sm text-gray-200 leading-relaxed">{analysis.encouragement}</p>
                 </div>
               )}
               {analysis.outlook && (
                 <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
-                  <p className="text-xs text-indigo-400 mb-1">🔭 展望</p>
+                  <p className="text-xs text-indigo-400 mb-1">展望</p>
                   <p className="text-sm text-gray-200 leading-relaxed">{analysis.outlook}</p>
                 </div>
               )}
@@ -173,7 +173,7 @@ export default function JournalDetail() {
 
           {analysis.honest_reflection && (
             <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 mt-3">
-              <p className="text-xs text-rose-400 mb-1">🪞 诚实的反思</p>
+              <p className="text-xs text-rose-400 mb-1">诚实的反思</p>
               <p className="text-sm text-gray-200 leading-relaxed">{analysis.honest_reflection}</p>
             </div>
           )}

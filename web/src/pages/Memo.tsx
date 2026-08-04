@@ -36,7 +36,7 @@ export default function Memo() {
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "32px 24px" }}>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 4 }}>📌 备忘录</h1>
+      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 4 }}>备忘录</h1>
       <p style={{ color: "var(--text4)", fontSize: "0.8rem", marginBottom: 20 }}>记住重要的事——持久化存储，重启不丢失</p>
 
       <div className="card" style={{ marginBottom: 20 }}>
@@ -67,8 +67,7 @@ export default function Memo() {
                     load();
                   }}
                 >
-                  🗑
-                </button>
+                  </button>
               </div>
               <p style={{ fontSize: "0.8rem", color: "var(--text3)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{m.note}</p>
               {m.deadline && (

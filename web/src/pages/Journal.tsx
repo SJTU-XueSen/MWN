@@ -151,7 +151,7 @@ export default function Journal() {
         </div>
       ) : (
         <div className="card p-12 text-center">
-          <div className="text-5xl mb-4">📝</div>
+          <div className="text-5xl mb-4"></div>
           <h3 className="text-lg font-semibold text-gray-400 mb-2">还没有人生记录</h3>
           <p className="text-sm text-gray-500 mb-6">写下你今天经历了什么、心情如何、在想什么</p>
           <button onClick={() => setShowForm(true)} className="btn text-white px-6 py-2.5 rounded-xl text-sm font-semibold inline-block">

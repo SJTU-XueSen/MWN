@@ -38,11 +38,11 @@ export default function ReferencesPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 24px" }}>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 4 }}>🌐 人生参考</h1>
+      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 4 }}>人生参考</h1>
       <p style={{ color: "var(--text4)", fontSize: "0.8rem", marginBottom: 16 }}>
         真实的他人经历——你的浏览会被记录为兴趣信号，参与人格聚合
       </p>
-      {insight && <p style={{ fontSize: "0.78rem", color: "var(--accent)", marginBottom: 16 }}>🪞 {insight}</p>}
+      {insight && <p style={{ fontSize: "0.78rem", color: "var(--accent)", marginBottom: 16 }}>{insight}</p>}
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         {CATEGORIES.map((c) => (

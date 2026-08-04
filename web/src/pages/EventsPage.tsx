@@ -155,7 +155,7 @@ export default function EventsPage() {
       {/* 统计条 */}
       <div className="card p-4 mb-6 flex items-center gap-6">
         <div className="flex items-center gap-2">
-          <span className="text-lg">📊</span>
+          <span className="text-lg"></span>
           <span className="text-sm text-gray-400">
             共 <strong className="#10213c">{total}</strong> 个人生事件
           </span>
@@ -286,12 +286,10 @@ export default function EventsPage() {
       {/* 底部快捷入口 */}
       <div className="mt-6 flex items-center gap-3 text-sm text-gray-500">
         <span>快速跳转：</span>
-        <a href="/journal" onClick={e => { e.preventDefault(); nav("/journal"); }} className="#8b5e3c hover:underline">
-          📝 日常记录
+        <a href="/journal" onClick={e => { e.preventDefault(); nav("/journal"); }} className="#8b5e3c hover:underline">日常记录
         </a>
         <span>·</span>
-        <a href="/persona" onClick={e => { e.preventDefault(); nav("/persona"); }} className="#8b5e3c hover:underline">
-          🧬 数字人格
+        <a href="/persona" onClick={e => { e.preventDefault(); nav("/persona"); }} className="#8b5e3c hover:underline">数字人格
         </a>
       </div>
       </>

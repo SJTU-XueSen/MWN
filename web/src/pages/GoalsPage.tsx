@@ -56,7 +56,7 @@ export default function GoalsPage() {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "32px 24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700 }}>🎯 人生目标</h1>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 700 }}>人生目标</h1>
         <button className="btn" onClick={() => setShowForm(!showForm)}>{showForm ? "取消" : "+ 新目标"}</button>
       </div>
       <p style={{ color: "var(--text4)", fontSize: "0.8rem", marginBottom: 20 }}>目标会参与人生模拟与差距分析</p>
@@ -136,7 +136,7 @@ export default function GoalsPage() {
             {g.description && <p style={{ fontSize: "0.8rem", color: "var(--text3)", lineHeight: 1.6 }}>{g.description}</p>}
             {g.ai_gap_analysis && (
               <div style={{ marginTop: 10, padding: 12, borderRadius: 10, background: "var(--accent-bg2)", fontSize: "0.8rem", lineHeight: 1.7, whiteSpace: "pre-wrap", color: "var(--text2)" }}>
-                🪞 {g.ai_gap_analysis}
+                {g.ai_gap_analysis}
               </div>
             )}
           </div>

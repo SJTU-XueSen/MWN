@@ -52,7 +52,7 @@ export default function ExperiencePage() {
       <Link to="/future-chat" style={{ fontSize: "0.8rem", color: "var(--accent)", textDecoration: "none" }}>← 返回对话列表</Link>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, marginBottom: 20 }}>
-        <h1 style={{ fontSize: "1.3rem", fontWeight: 700 }}>🎭 人生体验</h1>
+        <h1 style={{ fontSize: "1.3rem", fontWeight: 700 }}>人生体验</h1>
         <span className="badge" style={{ background: "var(--accent-bg)", color: "var(--accent)" }}>
           {session?.current_year} 年 · {session?.current_age} 岁
         </span>
@@ -60,7 +60,7 @@ export default function ExperiencePage() {
 
       {/* 人格状态 */}
       <div className="card" style={{ marginBottom: 16 }}>
-        <h3 style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: 10 }}>🧬 当前人格状态</h3>
+        <h3 style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: 10 }}>当前人格状态</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 8 }}>
           {Object.entries(traits).map(([k, v]: any) => (
             <div key={k}>
@@ -117,7 +117,7 @@ export default function ExperiencePage() {
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
           >
             <p style={{ fontSize: "0.9rem", fontWeight: 600 }}>{c.text}</p>
-            <p style={{ fontSize: "0.72rem", color: "var(--text4)", marginTop: 6 }}>✨ {c.gain} · 🌙 {c.cost}</p>
+            <p style={{ fontSize: "0.72rem", color: "var(--text4)", marginTop: 6 }}>{c.gain} · 🌙 {c.cost}</p>
           </button>
         ))}
       </div>

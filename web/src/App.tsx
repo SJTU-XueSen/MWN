@@ -80,7 +80,11 @@ function Sidebar() {
       }}
     >
       <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, padding: "20px 16px", borderBottom: "1px solid var(--sidebar-border)", textDecoration: "none" }}>
-        <span style={{ fontSize: "1.5rem" }}>🪞</span>
+        <span style={{
+          width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+          background: "var(--accent-bg)", border: "1px solid var(--accent-border)", color: "var(--accent)",
+          fontWeight: 700, fontSize: "0.95rem", flexShrink: 0,
+        }}>镜</span>
         <div>
           <p style={{ fontWeight: 700, color: "var(--text)", margin: 0, fontSize: "0.9rem" }}>镜·界·联</p>
           <p style={{ fontSize: "0.6rem", color: "var(--text4)", margin: 0 }}>认识自己 · 走向世界 · 与他人共同创造</p>
@@ -88,7 +92,7 @@ function Sidebar() {
       </a>
       <nav style={{ flex: 1, padding: "12px 8px", overflowY: "auto" }}>
         <NavLink to="/" end style={s(a("/"))}><Home size={15} />首页</NavLink>
-        <Section label="🪞 认识自己" />
+        <Section label="认识自己" />
         <NavLink to="/journal" style={s(a("/journal"))}><PenLine size={15} />日常记录</NavLink>
         <NavLink to="/events" style={s(a("/events"))}><Map size={15} />人生地图</NavLink>
         <NavLink to="/persona" style={s(a("/persona"))}><Fingerprint size={15} />数字人格</NavLink>
@@ -97,11 +101,11 @@ function Sidebar() {
         <NavLink to="/future-chat" style={s(a("/future-chat"))}><MessageCircle size={15} />未来对话</NavLink>
         <NavLink to="/goals" style={s(a("/goals"))}><Target size={15} />人生目标</NavLink>
         <NavLink to="/reports" style={s(a("/reports"))}><FileText size={15} />成长报告</NavLink>
-        <Section label="🌏 走向世界" />
+        <Section label="走向世界" />
         <NavLink to="/connections" end style={s(a("/connections", true))}><CalendarDays size={15} />活动大厅</NavLink>
         <NavLink to="/connections/chat" style={s(a("/connections/chat"))}><MessageCircle size={15} />团队聊天</NavLink>
         <NavLink to="/connections/work" style={s(a("/connections/work"))}><Briefcase size={15} />工作台</NavLink>
-        <Section label="🧰 更多" dim />
+        <Section label="更多" dim />
         <NavLink to="/ai-search" style={s(a("/ai-search"))}><Search size={15} />AI 检索</NavLink>
         <NavLink to="/memo" style={s(a("/memo"))}><StickyNote size={15} />备忘录</NavLink>
         <NavLink to="/references" style={s(a("/references"))}><Globe size={15} />人生参考</NavLink>

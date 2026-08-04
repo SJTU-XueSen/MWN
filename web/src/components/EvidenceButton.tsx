@@ -65,7 +65,7 @@ export default function EvidenceButton({
         }}
         title="展开这条结论的真实数据来源"
       >
-        🔍 {label}
+        {label}
       </button>
 
       {open && (
@@ -79,7 +79,7 @@ export default function EvidenceButton({
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <h3 style={{ fontSize: "0.95rem", fontWeight: 700 }}>📎 证据链 — 为什么是这个结论</h3>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 700 }}>证据链 — 为什么是这个结论</h3>
               <button onClick={() => setOpen(false)} style={{ border: "none", background: "none", fontSize: "1.2rem", cursor: "pointer", color: "var(--text4)" }}>×</button>
             </div>
             <p style={{ fontSize: "0.72rem", color: "var(--text4)", marginBottom: 12 }}>

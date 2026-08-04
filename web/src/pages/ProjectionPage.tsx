@@ -24,7 +24,7 @@ export default function ProjectionPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 24px" }}>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 4 }}>🔭 推演人生</h1>
+      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 4 }}>推演人生</h1>
       <p style={{ color: "var(--text4)", fontSize: "0.8rem", marginBottom: 20 }}>
         无干预式推演——AI 基于你真实的过去，推演未来可能的人生走向。不是预言，是一种可能性
       </p>
@@ -41,7 +41,6 @@ export default function ProjectionPage() {
 
       {running && (
         <div className="card" style={{ textAlign: "center", padding: 48 }}>
-          <p style={{ fontSize: "2rem", marginBottom: 12 }}>🔭</p>
           <p style={{ color: "var(--text3)" }}>AI 正在聚合你的记忆、人格与目标...</p>
         </div>
       )}

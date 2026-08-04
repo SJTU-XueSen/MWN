@@ -93,7 +93,6 @@ export default function WorkPage() {
   if (!data.has_team) {
     return (
       <div style={{ maxWidth: 600, margin: "0 auto", padding: "80px 24px", textAlign: "center" }}>
-        <p style={{ fontSize: "3rem", marginBottom: 16 }}>🧰</p>
         <h1 style={{ fontSize: "1.3rem", fontWeight: 700, marginBottom: 8 }}>工作台</h1>
         <p style={{ color: "var(--text4)", fontSize: "0.88rem", lineHeight: 1.8 }}>
           你还没有加入任何战队。<br />先到<a href="/connections" style={{ color: "var(--accent)" }}>活动大厅</a>加入或创建一支战队吧
@@ -105,14 +104,14 @@ export default function WorkPage() {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700 }}>🧰 工作台</h1>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 700 }}>工作台</h1>
         <span className="badge" style={{ background: "var(--accent-bg)", color: "var(--accent)" }}>
           {data.team.name} · {data.my_role === "leader" ? "队长" : "成员"}
         </span>
       </div>
       {msg && <p style={{ fontSize: "0.8rem", color: "var(--accent)", margin: "8px 0" }}>{msg}</p>}
       {data.is_working_phase && (
-        <p style={{ fontSize: "0.78rem", color: "#FBBF24", margin: "8px 0" }}>💡 已进入工作阶段——开始认领任务并协作产出</p>
+        <p style={{ fontSize: "0.78rem", color: "#FBBF24", margin: "8px 0" }}>已进入工作阶段——开始认领任务并协作产出</p>
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 20, marginTop: 16 }}>

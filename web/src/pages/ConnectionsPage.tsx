@@ -148,7 +148,7 @@ export default function ConnectionsPage() {
   return (
     <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700 }}>🌏 活动大厅</h1>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 700 }}>活动大厅</h1>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn-ghost" onClick={triggerScrape} disabled={scraping}>
             <i className="fa-solid fa-rotate" /> {scraping ? "爬取中..." : "爬取 SJTU 活动"}
@@ -356,10 +356,10 @@ export default function ConnectionsPage() {
               {detail.organizer && <span className="badge" style={{ background: "var(--surface2)", color: "var(--text4)" }}>{detail.organizer}</span>}
             </div>
             <p style={{ fontSize: "0.85rem", lineHeight: 1.8, color: "var(--text2)", whiteSpace: "pre-wrap", marginBottom: 10 }}>{detail.description}</p>
-            {detail.credit_info && <p style={{ fontSize: "0.78rem", color: "var(--accent)", marginBottom: 8 }}>💎 {detail.credit_info}</p>}
+            {detail.credit_info && <p style={{ fontSize: "0.78rem", color: "var(--accent)", marginBottom: 8 }}>{detail.credit_info}</p>}
             {detail.registration_deadline && <p style={{ fontSize: "0.75rem", color: "var(--text4)", marginBottom: 8 }}>报名截止：{detail.registration_deadline}</p>}
 
-            <h3 style={{ fontSize: "0.9rem", fontWeight: 700, margin: "14px 0 8px" }}>🏳️ 战队列表（{detail.teams?.length || 0}）</h3>
+            <h3 style={{ fontSize: "0.9rem", fontWeight: 700, margin: "14px 0 8px" }}>战队列表（{detail.teams?.length || 0}）</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {detail.teams?.map((t: any) => (
                 <div key={t.id} style={{ padding: 12, borderRadius: 10, border: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
