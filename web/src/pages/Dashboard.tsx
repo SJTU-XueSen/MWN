@@ -171,6 +171,10 @@ export default function Dashboard() {
   const tendencies: [string, number][] = Object.entries(abilityProfile).sort((a, b) => b[1] - a[1]);
   const partnerNeeds = derivePartnerNeeds(tendencies);
 
+  // ── 我与世界：组队活动 + SJTU 活动 ──
+  const worldComps = d?.competitions || [];
+  const worldActs = (d?.activities || []).filter((a: any) => !getCollapsed().has(a.id));
+
   // ── 目标→未来自我匹配 ──
   const goalFutureMatches = (d?.active_goals || []).map((g: any) => {
     const title = (g.title || "").toLowerCase();
@@ -373,19 +377,15 @@ export default function Dashboard() {
           这些活动与你的画像产生共鸣——不是"你该参加的"，而是可能自然吸引你的。
         </p>
 
-        {(() => {
-          const comps = d?.competitions || [];
-          const acts = (d?.activities || []).filter((a: any) => !getCollapsed().has(a.id));
-          return comps.length + acts.length;
-        })() > 0 ? (
+        {worldComps.length + worldActs.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {/* ── 组队活动（可加入战队共同创造） ── */}
-            {(d?.competitions || []).length > 0 && (
+            {worldComps.length > 0 && (
               <>
                 <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text4)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
                   🏳️ 组队活动
                 </p>
-                {d.competitions.map((c: any, i: number) => (
+                {worldComps.map((c: any, i: number) => (
                   <a key={c.id} href="/connections"
                     style={{ display: "block", padding: "14px 18px", borderRadius: 10, textDecoration: "none", color: "inherit", background: "rgba(139,92,246,0.03)", border: "1px solid rgba(139,92,246,0.12)", transition: "all 0.15s" }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(139,92,246,0.3)"; }}
@@ -419,12 +419,12 @@ export default function Dashboard() {
             )}
 
             {/* ── SJTU 校园通知 ── */}
-            {acts.length > 0 && (
+            {worldActs.length > 0 && (
               <>
                 <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text4)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
                   📅 SJTU 校园通知
                 </p>
-                {acts.map((a: any, i: number) => {
+                {worldActs.map((a: any, i: number) => {
                   const offset = i * 2;
                   const rotatedTendencies = [...tendencies.slice(offset, offset + 3), ...tendencies.slice(0, Math.max(0, 3 - Math.max(0, tendencies.length - offset)))];
                   const dims = rotatedTendencies.length >= 2 ? rotatedTendencies.slice(0, 3) : tendencies.slice(0, 3);
