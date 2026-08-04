@@ -124,6 +124,7 @@ async def api_dashboard(request: Request):
                 await db.execute(
                     select(Competition).where(
                         Competition.approval_status == "approved",
+                        Competition.is_competition == False,  # 与活动大厅过滤一致
                         Competition.status == "active",
                     ).order_by(Competition.created_at.desc()).limit(6)
                 )
