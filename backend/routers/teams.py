@@ -234,6 +234,112 @@ async def api_team_disband(request: Request):
         return JSONResponse({"ok": True})
 
 
+@router.post("/team/{team_id}/invite")
+async def api_team_invite(request: Request, team_id: int):
+    """队长邀请用户加入战队 → 给对方发组队邀请通知"""
+    uid = require_uid(request)
+    body = await request.json()
+    target_user_id = int(body.get("user_id", 0))
+    if not target_user_id:
+        return JSONResponse({"error": "缺少目标用户"}, 400)
+
+    async with AsyncSessionLocal() as db:
+        from backend.database.models import Notification
+
+        team = await db.get(Team, team_id)
+        if not team:
+            return JSONResponse({"error": "not_found"}, 404)
+        tm = (
+            await db.execute(
+                select(TeamMember).where(TeamMember.team_id == team.id, TeamMember.user_id == uid)
+            )
+        ).scalar_one_or_none()
+        if not tm or tm.role != "leader":
+            return JSONResponse({"error": "只有队长才能邀请成员"}, 403)
+        if team.status not in ("recruiting", "full"):
+            return JSONResponse({"error": "该战队当前不可邀请"}, 400)
+        # 目标用户是否已在同活动战队
+        comp = await db.get(Competition, team.competition_id)
+        existing = (
+            await db.execute(
+                select(TeamMember).join(Team).where(
+                    TeamMember.user_id == target_user_id, Team.competition_id == comp.id
+                ).limit(1)
+            )
+        ).scalar_one_or_none()
+        if existing:
+            return JSONResponse({"error": "对方已在该活动中加入战队"}, 400)
+
+        leader = await db.get(User, uid)
+        db.add(Notification(
+            user_id=target_user_id,
+            title="组队邀请",
+            message=f"{leader.real_name or leader.username} 邀请你加入战队「{team.name}」（活动：{comp.title}）",
+            read=False,
+            meta={"team_id": team.id, "competition_id": comp.id, "team_name": team.name},
+        ))
+        await db.commit()
+        return JSONResponse({"ok": True, "message": "邀请已发送"})
+
+
+@router.post("/notifications/{notif_id}/accept")
+async def api_notification_accept(request: Request, notif_id: int):
+    """接受组队邀请：加入战队 + 通知标记已读"""
+    uid = require_uid(request)
+    async with AsyncSessionLocal() as db:
+        from backend.database.models import Notification
+
+        n = await db.get(Notification, notif_id)
+        if not n or n.user_id != uid:
+            return JSONResponse({"error": "not_found"}, 404)
+        meta = n.meta or {}
+        team_id = meta.get("team_id")
+        if not team_id:
+            return JSONResponse({"error": "该通知不可接受"}, 400)
+        team = await db.get(Team, int(team_id))
+        if not team:
+            return JSONResponse({"error": "战队已不存在"}, 404)
+        if team.status != "recruiting":
+            return JSONResponse({"error": "该战队已停止招募"}, 400)
+        comp = await db.get(Competition, team.competition_id)
+        existing = (
+            await db.execute(
+                select(TeamMember).join(Team).where(
+                    TeamMember.user_id == uid, Team.competition_id == comp.id
+                ).limit(1)
+            )
+        ).scalar_one_or_none()
+        if existing:
+            return JSONResponse({"error": "你已在该活动中加入战队"}, 400)
+        member_count = (
+            await db.execute(select(func.count()).select_from(TeamMember).where(TeamMember.team_id == team.id))
+        ).scalar() or 0
+        if comp.max_team_size and member_count >= comp.max_team_size:
+            return JSONResponse({"error": "该战队已满员"}, 400)
+
+        db.add(TeamMember(team_id=team.id, user_id=uid, role="member"))
+        if comp.max_team_size and member_count + 1 >= comp.max_team_size:
+            team.status = "full"
+        n.read = True
+        await db.commit()
+        return JSONResponse({"ok": True, "message": "已加入战队"})
+
+
+@router.post("/notifications/{notif_id}/decline")
+async def api_notification_decline(request: Request, notif_id: int):
+    """拒绝组队邀请"""
+    uid = require_uid(request)
+    async with AsyncSessionLocal() as db:
+        from backend.database.models import Notification
+
+        n = await db.get(Notification, notif_id)
+        if not n or n.user_id != uid:
+            return JSONResponse({"error": "not_found"}, 404)
+        n.read = True
+        await db.commit()
+        return JSONResponse({"ok": True})
+
+
 @router.get("/potential-friends")
 async def api_potential_friends(request: Request):
     """按技能互补度推荐潜在队友（取前 8）"""

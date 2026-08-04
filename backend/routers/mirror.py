@@ -86,6 +86,72 @@ async def api_dashboard(request: Request):
         stats.setdefault("records", stats.get("record_count", 0))
         stats.setdefault("events", stats.get("event_count", 0))
         stats.setdefault("goals", stats.get("goal_count", 0))
+
+        # 用户兴趣画像（人格 interest_profile + 兴趣追踪）→ 活动匹配打分
+        from backend.services.dashboard_service import score_activity
+
+        user_interests: dict = {}
+        if p and p.interest_profile:
+            user_interests.update(dict(p.interest_profile))
+        user_interests.update({k: v for k, v in (data.get("interests") or {}).items() if k not in user_interests})
+
+        def _enrich(item: dict) -> dict:
+            text = " ".join([
+                str(item.get("title", "")), str(item.get("summary", "")),
+                str(item.get("category", "")), " ".join(item.get("tags", []) or []),
+            ])
+            match = score_activity(user_interests, text)
+            item["match_score"] = match["match_score"]
+            item["match_reason"] = match["reason"]
+            item["matched"] = match["matched"]
+            return item
+
+        activities_out = [
+            _enrich({
+                "id": a.get("id"), "title": a.get("title"), "summary": (a.get("summary") or "")[:120],
+                "publishDate": a.get("publishDate", ""), "inferredEndDate": a.get("inferredEndDate", ""),
+                "url": a.get("url", ""), "source": "sjtu",
+            })
+            for a in activities
+        ]
+
+        # 组队活动（活动大厅 competitions，同样参与匹配）
+        competitions_out = []
+        try:
+            from backend.database.models import Competition, Team
+
+            comps = (
+                await db.execute(
+                    select(Competition).where(
+                        Competition.approval_status == "approved",
+                        Competition.status == "active",
+                    ).order_by(Competition.created_at.desc()).limit(6)
+                )
+            ).scalars().all()
+            comp_ids = [c.id for c in comps]
+            team_counts: dict = {}
+            if comp_ids:
+                rows = (
+                    await db.execute(
+                        select(Team.competition_id, func.count(Team.id))
+                        .where(Team.competition_id.in_(comp_ids)).group_by(Team.competition_id)
+                    )
+                ).all()
+                team_counts = {r[0]: r[1] for r in rows}
+            for c in comps:
+                competitions_out.append(_enrich({
+                    "id": c.id, "title": c.title,
+                    "summary": (c.description or "")[:120],
+                    "category": c.category, "level": c.level,
+                    "registration_deadline": c.registration_deadline.strftime("%Y-%m-%d") if c.registration_deadline else "",
+                    "tags": c.tags or [], "credit_info": c.credit_info,
+                    "team_count": team_counts.get(c.id, 0),
+                    "max_team_size": c.max_team_size,
+                    "url": "/connections", "source": "competition",
+                }))
+        except Exception:
+            pass
+
         return JSONResponse({
             "stats": stats,
             "persona": persona_dict,
@@ -93,11 +159,8 @@ async def api_dashboard(request: Request):
             "recent_events": events_list,
             "active_goals": goals_list,
             "interests": dict(data.get("interests", {}) or {}),
-            "activities": [
-                {"id": a.get("id"), "title": a.get("title"), "summary": (a.get("summary") or "")[:100],
-                 "publishDate": a.get("publishDate", ""), "url": a.get("url", "")}
-                for a in activities
-            ],
+            "activities": activities_out,
+            "competitions": competitions_out,
         })
 
 

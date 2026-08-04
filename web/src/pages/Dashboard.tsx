@@ -57,6 +57,15 @@ function stars(v: number): string {
   if (v >= 80) return "★★★★★"; if (v >= 60) return "★★★★"; if (v >= 40) return "★★★"; if (v >= 20) return "★★"; return "★";
 }
 
+function daysLeft(dateStr: string): string {
+  if (!dateStr) return "";
+  const days = Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000);
+  if (days < 0) return "已截止";
+  if (days === 0) return "今天截止";
+  if (days <= 7) return `${days} 天后截止`;
+  return `${new Date(dateStr).toLocaleDateString("zh-CN", { month: "long", day: "numeric" })} 截止`;
+}
+
 // ── 从低分维度推导互补共同创造者 ──
 function derivePartnerNeeds(abilities: [string, number][]) {
   const lowKeys = abilities.filter(([, v]) => v < 45).map(([k]) => k);
@@ -112,7 +121,6 @@ export default function Dashboard() {
   const [futures, setFutures] = useState<any[]>([]);
   const [personaFull, setPersonaFull] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
-  const [activities, setActivities] = useState<any[]>([]);
   const loc = useLocation();
 
   useEffect(() => {
@@ -121,13 +129,11 @@ export default function Dashboard() {
       fetch("/api/mirror/future-chats").then(r => r.json()).catch(() => []),
       fetch("/api/mirror/persona").then(r => r.json()).catch(() => null),
       fetch("/api/auth/me", { credentials: "include" }).then(r => r.json()).catch(() => null),
-      fetch("/api/activities").then(r => r.json()).then(d => (d?.items || []).slice(0, 5)).catch(() => []),
-    ]).then(([dash, futuresData, personaData, userData, acts]) => {
+    ]).then(([dash, futuresData, personaData, userData]) => {
       setD(dash);
       setFutures(Array.isArray(futuresData) ? futuresData : []);
       setPersonaFull(personaData);
       setUser(userData?.id ? userData : null);
-      setActivities(acts);
     });
   }, [loc.key]);
 
@@ -367,50 +373,108 @@ export default function Dashboard() {
           这些活动与你的画像产生共鸣——不是"你该参加的"，而是可能自然吸引你的。
         </p>
 
-        {(() => { const visible = activities.filter((a: any) => !getCollapsed().has(a.id)); return visible.length > 0; })() ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {activities.filter((a: any) => !getCollapsed().has(a.id)).map((a: any, i: number) => {
-              // 去模板化：每个活动展示不同的维度子集
-              const offset = i * 2;
-              const rotatedTendencies = [...tendencies.slice(offset, offset + 3), ...tendencies.slice(0, Math.max(0, 3 - Math.max(0, tendencies.length - offset)))];
-              const dims = rotatedTendencies.length >= 2 ? rotatedTendencies.slice(0, 3) : tendencies.slice(0, 3);
-              const hasDims = dims.length >= 2;
-
-              return (
-                <a key={a.id} href={a.url || "#"} target="_blank" rel="noopener noreferrer"
-                  style={{ display: "block", padding: "14px 18px", borderRadius: 10, textDecoration: "none", color: "inherit", background: i === 0 ? "rgba(16,185,129,0.03)" : "rgba(0,0,0,0.02)", border: i === 0 ? "1px solid rgba(16,185,129,0.14)" : "1px solid rgba(0,0,0,0.04)", transition: "all 0.15s" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(16,185,129,0.25)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = i === 0 ? "rgba(16,185,129,0.14)" : "rgba(0,0,0,0.04)"; }}
-                >
-                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                    <span style={{ fontSize: "1rem", flexShrink: 0 }}>{i === 0 ? "🔥" : "📅"}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: "0.84rem", fontWeight: i === 0 ? 600 : 400, marginBottom: 4, color: "var(--text)" }}>{a.title}</p>
-                      <div style={{ display: "flex", gap: 6, fontSize: "0.68rem", color: "var(--text4)", flexWrap: "wrap", marginBottom: hasDims ? 8 : 0 }}>
-                        <span style={{ color: "#10B981" }}>进行中</span>
-                        {a.publishDate && <span>{a.publishDate}</span>}
-                      </div>
-
-                      {hasDims && (
-                        <div style={{ padding: "8px 12px", borderRadius: 6, background: "rgba(16,185,129,0.04)", border: "1px solid rgba(16,185,129,0.08)" }}>
-                          <p style={{ fontSize: "0.62rem", color: "var(--text4)", marginBottom: 4 }}>可能帮助你成长的维度</p>
-                          {dims.map(([k, v]) => (
-                            <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-                              <span style={{ fontSize: "0.64rem", color: "var(--text4)", width: 56, textAlign: "right", flexShrink: 0 }}>{signalLabel(k)}</span>
-                              <span style={{ fontSize: "0.68rem", color: "#34D399", letterSpacing: "0.05em" }}>{stars(v)}</span>
-                            </div>
-                          ))}
-                          <p style={{ fontSize: "0.64rem", color: "var(--text4)", lineHeight: 1.4, marginTop: 4 }}>
-                            💡 活动不匹配现在的你，而是匹配你可能成长的方向——你的{signalLabel(dims[0][0])}和{signalLabel(dims[1][0])}在这里有发挥空间。
-                          </p>
+        {(() => {
+          const comps = d?.competitions || [];
+          const acts = (d?.activities || []).filter((a: any) => !getCollapsed().has(a.id));
+          return comps.length + acts.length;
+        })() > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {/* ── 组队活动（可加入战队共同创造） ── */}
+            {(d?.competitions || []).length > 0 && (
+              <>
+                <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text4)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
+                  🏳️ 组队活动
+                </p>
+                {d.competitions.map((c: any, i: number) => (
+                  <a key={c.id} href="/connections"
+                    style={{ display: "block", padding: "14px 18px", borderRadius: 10, textDecoration: "none", color: "inherit", background: "rgba(139,92,246,0.03)", border: "1px solid rgba(139,92,246,0.12)", transition: "all 0.15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(139,92,246,0.3)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(139,92,246,0.12)"; }}
+                  >
+                    <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                      <span style={{ fontSize: "1rem", flexShrink: 0 }}>{c.match_score >= 60 ? "🔥" : "🎯"}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: "0.84rem", fontWeight: 600, marginBottom: 4, color: "var(--text)" }}>
+                          {c.title}
+                          <span style={{ marginLeft: 8, fontSize: "0.62rem", color: "var(--text4)", fontWeight: 400 }}>{c.category} · {c.level}</span>
+                        </p>
+                        <div style={{ display: "flex", gap: 10, fontSize: "0.68rem", color: "var(--text4)", flexWrap: "wrap", marginBottom: 6 }}>
+                          <span style={{ color: "var(--accent)", fontWeight: 600 }}>匹配度 {c.match_score}%</span>
+                          {c.registration_deadline && <span>⏰ {daysLeft(c.registration_deadline)}</span>}
+                          <span>{c.team_count} 支战队</span>
+                          {c.max_team_size && <span>最多 {c.max_team_size} 人</span>}
+                          {c.credit_info && <span>💎 {c.credit_info}</span>}
                         </div>
-                      )}
+                        {c.match_reason && (
+                          <div style={{ padding: "8px 12px", borderRadius: 6, background: "rgba(139,92,246,0.05)", border: "1px solid rgba(139,92,246,0.1)" }}>
+                            <p style={{ fontSize: "0.64rem", color: "var(--text3)", lineHeight: 1.5 }}>💡 {c.match_reason}</p>
+                          </div>
+                        )}
+                      </div>
+                      <ExternalLink size={12} color="#475569" style={{ flexShrink: 0, marginTop: 3 }} />
                     </div>
-                    <ExternalLink size={12} color="#475569" style={{ flexShrink: 0, marginTop: 3 }} />
-                  </div>
-                </a>
-              );
-            })}
+                  </a>
+                ))}
+              </>
+            )}
+
+            {/* ── SJTU 校园通知 ── */}
+            {acts.length > 0 && (
+              <>
+                <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text4)", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
+                  📅 SJTU 校园通知
+                </p>
+                {acts.map((a: any, i: number) => {
+                  const offset = i * 2;
+                  const rotatedTendencies = [...tendencies.slice(offset, offset + 3), ...tendencies.slice(0, Math.max(0, 3 - Math.max(0, tendencies.length - offset)))];
+                  const dims = rotatedTendencies.length >= 2 ? rotatedTendencies.slice(0, 3) : tendencies.slice(0, 3);
+                  const hasDims = dims.length >= 2;
+                  return (
+                    <a key={a.id} href={a.url || "#"} target="_blank" rel="noopener noreferrer"
+                      style={{ display: "block", padding: "14px 18px", borderRadius: 10, textDecoration: "none", color: "inherit", background: i === 0 ? "rgba(16,185,129,0.03)" : "rgba(0,0,0,0.02)", border: i === 0 ? "1px solid rgba(16,185,129,0.14)" : "1px solid rgba(0,0,0,0.04)", transition: "all 0.15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(16,185,129,0.25)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = i === 0 ? "rgba(16,185,129,0.14)" : "rgba(0,0,0,0.04)"; }}
+                    >
+                      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        <span style={{ fontSize: "1rem", flexShrink: 0 }}>{i === 0 ? "🔥" : "📅"}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: "0.84rem", fontWeight: i === 0 ? 600 : 400, marginBottom: 4, color: "var(--text)" }}>{a.title}</p>
+                          <div style={{ display: "flex", gap: 6, fontSize: "0.68rem", color: "var(--text4)", flexWrap: "wrap", marginBottom: hasDims ? 8 : 0 }}>
+                            <span style={{ color: "#10B981" }}>进行中</span>
+                            {a.publishDate && <span>{a.publishDate}</span>}
+                            {a.inferredEndDate && <span>⏰ {daysLeft(a.inferredEndDate)}</span>}
+                            {(a.match_score ?? 0) > 0 && <span style={{ color: "var(--accent)", fontWeight: 600 }}>匹配度 {a.match_score}%</span>}
+                          </div>
+
+                          {(hasDims || a.match_reason) && (
+                            <div style={{ padding: "8px 12px", borderRadius: 6, background: "rgba(16,185,129,0.04)", border: "1px solid rgba(16,185,129,0.08)" }}>
+                              {hasDims && (
+                                <>
+                                  <p style={{ fontSize: "0.62rem", color: "var(--text4)", marginBottom: 4 }}>可能帮助你成长的维度</p>
+                                  {dims.map(([k, v]) => (
+                                    <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                                      <span style={{ fontSize: "0.64rem", color: "var(--text4)", width: 56, textAlign: "right", flexShrink: 0 }}>{signalLabel(k)}</span>
+                                      <span style={{ fontSize: "0.68rem", color: "#34D399", letterSpacing: "0.05em" }}>{stars(v)}</span>
+                                    </div>
+                                  ))}
+                                  <p style={{ fontSize: "0.64rem", color: "var(--text4)", lineHeight: 1.4, marginTop: 4 }}>
+                                    💡 活动不匹配现在的你，而是匹配你可能成长的方向——你的{signalLabel(dims[0][0])}和{signalLabel(dims[1][0])}在这里有发挥空间。
+                                  </p>
+                                </>
+                              )}
+                              {a.match_reason && (
+                                <p style={{ fontSize: "0.64rem", color: "var(--text3)", lineHeight: 1.5 }}>💡 {a.match_reason}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <ExternalLink size={12} color="#475569" style={{ flexShrink: 0, marginTop: 3 }} />
+                      </div>
+                    </a>
+                  );
+                })}
+              </>
+            )}
           </div>
         ) : (
           <div style={{ padding: "20px", borderRadius: 12, textAlign: "center", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.04)" }}>

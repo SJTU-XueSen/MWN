@@ -10,6 +10,8 @@ export default function ChatPage() {
   const [aiReply, setAiReply] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [myId, setMyId] = useState<number | null>(null);
+  const [myTeams, setMyTeams] = useState<any[]>([]);
+  const [inviting, setInviting] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const loadMessages = () =>
@@ -18,7 +20,26 @@ export default function ChatPage() {
   useEffect(() => {
     api("/api/auth/me").then((u) => setMyId(u.id)).catch(() => {});
     api("/api/potential-friends").then((d) => setFriends(d.friends || [])).catch(() => {});
+    api("/api/my-teams").then((d) => setMyTeams(d.teams || [])).catch(() => {});
   }, []);
+
+  async function inviteFriend(userId: number) {
+    if (myTeams.length === 0) {
+      alert("你需要先加入或创建一支战队才能邀请队友");
+      return;
+    }
+    setInviting(userId);
+    try {
+      const res = await api(`/api/team/${myTeams[0].team_id}/invite`, {
+        method: "POST",
+        body: JSON.stringify({ user_id: userId }),
+      });
+      if (res.error) alert(res.error);
+      else alert(`已向对方发送「${myTeams[0].team_name}」的组队邀请`);
+    } finally {
+      setInviting(null);
+    }
+  }
 
   useEffect(() => {
     loadMessages();
@@ -141,9 +162,19 @@ export default function ChatPage() {
           <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: 10 }}>👥 潜在队友</h3>
           {friends.length === 0 && <p style={{ fontSize: "0.75rem", color: "var(--text4)" }}>暂无推荐</p>}
           {friends.map((f) => (
-            <div key={f.user_id} style={{ padding: "8px 0", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "0.82rem", fontWeight: 600 }}>{f.real_name}</span>
-              <span className="tag" style={{ background: "var(--accent-bg)", color: "var(--accent)" }}>{f.match_score}</span>
+            <div key={f.user_id} style={{ padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <span style={{ fontSize: "0.82rem", fontWeight: 600 }}>{f.real_name}</span>
+                <span className="tag" style={{ background: "var(--accent-bg)", color: "var(--accent)" }}>{f.match_score}</span>
+              </div>
+              <button
+                className="btn"
+                style={{ padding: "4px 10px", fontSize: "0.68rem", width: "100%" }}
+                disabled={inviting === f.user_id}
+                onClick={() => inviteFriend(f.user_id)}
+              >
+                {inviting === f.user_id ? "发送中..." : "🤝 邀请组队"}
+              </button>
             </div>
           ))}
         </div>

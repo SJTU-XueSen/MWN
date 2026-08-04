@@ -43,6 +43,7 @@ import SettingsPage from "./pages/SettingsPage";
 import ReferencesPage from "./pages/ReferencesPage";
 import ProfilePage from "./pages/ProfilePage";
 import Login from "./pages/Login";
+import NotificationBell from "./components/NotificationBell";
 
 function Sidebar() {
   const { user } = useAuth();
@@ -105,6 +106,7 @@ function Sidebar() {
         <NavLink to="/connections/work" style={s(a("/connections/work"))}><Briefcase size={15} />工作台</NavLink>
       </nav>
       <div style={{ padding: "12px 8px", borderTop: "1px solid var(--sidebar-border)" }}>
+        {user && <NotificationBell />}
         <NavLink to="/settings" style={s(a("/settings"))}><Settings size={15} />设置</NavLink>
         <NavLink to="/profile" style={s(a("/profile"))}><User size={15} />{user?.real_name || user?.username || "登录"}</NavLink>
         {user && <LogoutButton />}

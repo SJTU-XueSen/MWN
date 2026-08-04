@@ -21,12 +21,29 @@ async def get_db():
 
 
 async def init_db():
-    """建表 + 清理 ChromaDB 中已删除用户的孤儿向量"""
+    """建表 + 轻量迁移 + 清理 ChromaDB 中已删除用户的孤儿向量"""
     import backend.database.models  # noqa: F401 — 注册全部模型
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await _migrate()
     await _cleanup_orphan_chroma()
+
+
+async def _migrate():
+    """轻量列迁移（create_all 不会为已存在的表加列）"""
+    migrations = [
+        ("notifications", "meta", "JSON"),
+    ]
+    async with AsyncSessionLocal() as session:
+        for table, column, _type in migrations:
+            try:
+                await session.execute(
+                    text(f"ALTER TABLE {table} ADD COLUMN {column} {_type}")
+                )
+                await session.commit()
+            except Exception:
+                pass  # 列已存在
 
 
 async def _cleanup_orphan_chroma():

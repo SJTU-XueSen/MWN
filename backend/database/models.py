@@ -315,6 +315,7 @@ class Notification(Base):
     title = Column(String(200), default="")
     message = Column(Text, default="")
     read = Column(Boolean, default=False)
+    meta = Column(JSON, default=dict)          # 附加数据（如组队邀请 {team_id}）
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

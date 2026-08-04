@@ -17,19 +17,51 @@ _cache_ts: float = 0
 CACHE_TTL = 300  # 5 分钟
 
 
+def _search_bing(query: str) -> list[dict]:
+    """必应中国版搜索（国内可用，解析 li.b_algo）"""
+    import urllib.parse
+    import urllib.request
+
+    from bs4 import BeautifulSoup
+
+    q = urllib.parse.quote(query)
+    url = f"https://cn.bing.com/search?q={q}"
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+    })
+    html = urllib.request.urlopen(req, timeout=15).read().decode("utf-8", errors="ignore")
+    soup = BeautifulSoup(html, "lxml")
+    results = []
+    for li in soup.select("li.b_algo"):
+        a = li.select_one("h2 a")
+        p = li.select_one(".b_caption p")
+        if a:
+            results.append({
+                "title": a.get_text(strip=True)[:100],
+                "url": a.get("href", ""),
+                "snippet": (p.get_text(strip=True) if p else "")[:200],
+                "source": "bing",
+            })
+    return results
+
+
 def _search(query: str) -> list[dict]:
+    """必应优先，DuckDuckGo 兜底"""
+    try:
+        items = _search_bing(query)
+        if items:
+            return items
+    except Exception:
+        pass
     try:
         from duckduckgo_search import DDGS
 
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=8))
         return [
-            {
-                "title": r.get("title", ""),
-                "url": r.get("href", ""),
-                "snippet": r.get("body", "")[:200],
-                "source": "duckduckgo",
-            }
+            {"title": r.get("title", ""), "url": r.get("href", ""),
+             "snippet": r.get("body", "")[:200], "source": "duckduckgo"}
             for r in results
             if r.get("title")
         ]

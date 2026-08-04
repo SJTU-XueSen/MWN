@@ -23,7 +23,6 @@ async def do_scrape() -> dict:
     import time
 
     from backend.services.scraper.sjtu_scraper import (
-        batch_analyze,
         fetch_details_batch,
         is_competition_related,
         scrape_all,
@@ -35,7 +34,26 @@ async def do_scrape() -> dict:
 
     from backend.services.ai_filter import analyze_competition_page
 
-    analyzed = await asyncio.to_thread(batch_analyze, [(i, details.get(i["url"], "")) for i in related], analyze_competition_page)
+    # 并发 AI 分析（4 线程并行，单条 GLM 调用 ~10s，串行会拖到 5 分钟+）
+    def _analyze_one(item):
+        detail_text = details.get(item["url"], "")
+        if not detail_text or detail_text.startswith("[抓取失败"):
+            return item, None
+        try:
+            return item, analyze_competition_page(
+                title=item["title"], url=item["url"],
+                source=item["source"], detail_text=detail_text,
+            )
+        except Exception:
+            return item, None
+
+    def _run_concurrent():
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            return list(ex.map(_analyze_one, related))
+
+    analyzed = await asyncio.to_thread(_run_concurrent)
 
     new_count = 0
     ai_filtered = 0
@@ -49,6 +67,24 @@ async def do_scrape() -> dict:
                 continue
             if result.get("source_url") in existing_urls:
                 continue
+            # ── 优化筛选机制：剔除非学生可参与内容 ──
+            # 1) 纯竞赛（is_competition=True）→ 由 SJTU 通知 tab 承接，不进入组队活动库
+            if result.get("is_competition") is True:
+                ai_filtered += 1
+                continue
+            # 2) 学生无需主动参与（needs_participation=False，如纯通知/讲座）
+            if result.get("needs_participation") is False:
+                ai_filtered += 1
+                continue
+            # 3) 已过报名截止
+            if result.get("deadline"):
+                try:
+                    dl = datetime.fromisoformat(result["deadline"])
+                    if dl < datetime.utcnow():
+                        ai_filtered += 1
+                        continue
+                except Exception:
+                    pass
             deadline = None
             if result.get("deadline"):
                 try:

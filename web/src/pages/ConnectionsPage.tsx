@@ -22,6 +22,8 @@ export default function ConnectionsPage() {
   const [msg, setMsg] = useState("");
   const [scraping, setScraping] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [myTeams, setMyTeams] = useState<any[]>([]);
+  const [inviting, setInviting] = useState<number | null>(null);
 
   // 发布表单
   const [cTitle, setCTitle] = useState("");
@@ -63,6 +65,7 @@ export default function ConnectionsPage() {
     loadCompetitions();
     loadSjtu();
     loadFriends();
+    api("/api/my-teams").then((d) => setMyTeams(d.teams || [])).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterCat, filterLevel, search]);
 
@@ -108,6 +111,23 @@ export default function ConnectionsPage() {
     if (!res.error) {
       setTeamName("");
       openDetail(detail.id);
+    }
+  }
+
+  async function inviteFriend(userId: number) {
+    if (myTeams.length === 0) {
+      setMsg("你需要先加入或创建一支战队才能邀请队友");
+      return;
+    }
+    setInviting(userId);
+    try {
+      const res = await api(`/api/team/${myTeams[0].team_id}/invite`, {
+        method: "POST",
+        body: JSON.stringify({ user_id: userId }),
+      });
+      setMsg(res.error || `已向对方发送「${myTeams[0].team_name}」的组队邀请`);
+    } finally {
+      setInviting(null);
     }
   }
 
@@ -296,8 +316,16 @@ export default function ConnectionsPage() {
                 </p>
               )}
               {(f.shared_skills || []).length > 0 && (
-                <p style={{ fontSize: "0.72rem", color: "var(--text4)" }}>共同技能：{(f.shared_skills || []).join("、")}</p>
+                <p style={{ fontSize: "0.72rem", color: "var(--text4)", marginBottom: 8 }}>共同技能：{(f.shared_skills || []).join("、")}</p>
               )}
+              <button
+                className="btn"
+                style={{ padding: "6px 14px", fontSize: "0.72rem", width: "100%" }}
+                disabled={inviting === f.user_id}
+                onClick={() => inviteFriend(f.user_id)}
+              >
+                {inviting === f.user_id ? "发送中..." : myTeams.length === 0 ? "先创建战队后邀请" : "🤝 邀请组队"}
+              </button>
             </div>
           ))}
         </div>

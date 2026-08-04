@@ -110,3 +110,29 @@ def _generate_insight(records, events, persona, streak) -> str:
         e = events[0]
         parts.append(f"最近一次重要事件：{e.title}")
     return "。".join(parts) + "。"
+
+
+# ── 活动匹配打分（数据锚定：只用用户真实兴趣/画像 vs 活动文本） ──
+
+def score_activity(user_interests: dict, text: str, extra_fields: list[str] = None) -> dict:
+    """计算用户与活动的匹配度（0-100）与推荐理由
+
+    user_interests: {兴趣领域: 权重}（来自兴趣追踪/人格画像）
+    text: 活动标题+描述+分类+标签 拼接
+    """
+    if not user_interests:
+        return {"match_score": 0, "matched": [], "reason": "数据积累中——记录更多经历后，这里会出现为你量身匹配的活动"}
+    matched = []
+    score = 0
+    for field, weight in user_interests.items():
+        field = str(field)
+        if field and field in text:
+            matched.append(field)
+            score += min(int(weight or 50), 100)
+    score = min(100, score // 2 if score else 0)  # 归一化，防止单一字段撑爆
+    score = max(5, score) if matched else 0
+    if matched:
+        reason = "匹配你的兴趣：{0}".format("、".join(matched[:4]))
+    else:
+        reason = "与你当前画像关联较弱的探索方向——新的领域可能带来新的成长"
+    return {"match_score": score, "matched": matched[:4], "reason": reason}

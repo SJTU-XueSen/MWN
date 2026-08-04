@@ -100,6 +100,7 @@ async def api_notifications(request: Request):
         ).scalars().all()
         return JSONResponse([
             {"id": n.id, "title": n.title, "message": n.message, "read": n.read,
+             "meta": n.meta or {},
              "createdAt": n.created_at.isoformat() if n.created_at else ""}
             for n in items
         ])
@@ -125,6 +126,19 @@ async def api_notification_delete(request: Request, notif_id: int):
         if not n or n.user_id != uid:
             return JSONResponse({"error": "not_found"}, 404)
         await db.delete(n)
+        await db.commit()
+        return JSONResponse({"ok": True})
+
+
+@router.post("/notifications/{notif_id}/read")
+async def api_notification_read(request: Request, notif_id: int):
+    """标记通知已读"""
+    uid = require_uid(request)
+    async with AsyncSessionLocal() as db:
+        n = await db.get(Notification, notif_id)
+        if not n or n.user_id != uid:
+            return JSONResponse({"error": "not_found"}, 404)
+        n.read = True
         await db.commit()
         return JSONResponse({"ok": True})
 
@@ -194,6 +208,16 @@ async def api_activities(request: Request, refresh: str = "0"):
         return JSONResponse(await get_activities(force_refresh=(refresh == "1")))
     except Exception as e:
         return JSONResponse({"items": [], "stats": {}, "error": f"爬虫服务不可用: {e}"})
+
+
+# ── 人生参考（DuckDuckGo 真实经历搜索，5 分钟缓存）──
+
+@router.get("/references")
+async def api_references(request: Request, category: str = "life"):
+    """按分类搜索真实人生经历（考研/求职/创业/转行/大学生活/失败教训）"""
+    from backend.services.life_reference_service import get_references
+
+    return JSONResponse(await get_references(category))
 
 
 # ── AI 检索（本地实现，不再代理 3001）───────────────
