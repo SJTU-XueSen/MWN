@@ -1,0 +1,34 @@
+/* ═══ 视觉体系与 PhiAgent 一致（浅色默认 + 深色切换） ═══ */
+:root {
+  --bg: #ffffff;
+  --card-bg: #ffffff;
+  --border: #e8e8ea;
+  --text: #1f1f1f;
+  --text-dim: #8e8e93;
+  --accent: #0d0d0d;      /* ChatGPT 式深色强调（发送按钮/链接/选中） */
+  --soft: #f4f4f5;        /* 浅灰块（气泡/引用/代码底） */
+  --ring: rgba(13, 13, 13, 0.08);
+}
+body.dark-mode {
+  --bg: #17181a;
+  --card-bg: #1f2023;
+  --border: #2c2e33;
+  --text: #e8e8ea;
+  --text-dim: #8b8d94;
+  --accent: #e8e8ea;
+  --soft: #232529;
+  --ring: rgba(255, 255, 255, 0.06);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: rgba(13, 13, 13, 0.08); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+/* 深色模式: PNG 工具图标反色（黑色图标 → 白色） */
+body.dark-mode .icon-img { filter: invert(1); }

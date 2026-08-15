@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ChevronRight, Compass, ExternalLink, Globe, Sparkles, Sprout, Users } from "lucide-react";
+import { ChevronRight, Compass, ExternalLink, Globe, Sparkles, Sprout, Target, Users } from "lucide-react";
 
 // ── 折叠活动（与 Activities 页共享 localStorage key） ──
 const COLLAPSED_KEY = "collapsed_activities";

@@ -257,6 +257,18 @@ class GrowthReport(Base):
 #  12. 页面访问追踪
 # ══════════════════════════════════════════════════════
 
+class AgentChatMessage(Base):
+    """智能体对话历史（agent 页刷新后恢复）"""
+    __tablename__ = "agent_chat_messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    agent = Column(String(20), default="mentor")
+    role = Column(String(10), nullable=False)                # user / assistant
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class PageVisit(Base):
     __tablename__ = "page_visits"
 

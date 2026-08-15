@@ -32,3 +32,8 @@ web/dist/
 # Backups
 backups/
 *.tgz
+
+# Runtime logs
+server.log
+server_err.log
+*.log

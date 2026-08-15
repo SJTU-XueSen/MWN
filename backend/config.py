@@ -25,6 +25,11 @@ DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY", "")
 ZHIPU_BASE_URL = os.getenv("ZHIPU_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
 
+# Qwen（阿里云百炼 compatible-mode, OpenAI 兼容）
+QWEN_API_KEY = os.getenv("QWEN_API_KEY", "")
+QWEN_BASE_URL = os.getenv("QWEN_BASE_URL", "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
+QWEN_MODEL = os.getenv("QWEN_MODEL", "qwen3.6-flash")
+
 
 def _is_valid_key(key: str) -> bool:
     """排除占位符 key"""

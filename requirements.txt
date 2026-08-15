@@ -12,3 +12,7 @@ wikipedia>=1.4.0
 beautifulsoup4>=4.15.0
 lxml>=6.0.0
 # 可选：语音识别（已在 .venv 中安装 funasr+torch）
+langchain-core==1.5.3
+langchain-deepseek==1.1.0
+# agent 对话层 (LangGraph)
+langgraph==1.2.4
