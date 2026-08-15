@@ -9,8 +9,7 @@ build/
 # Environment
 .env
 
-# Database & Data
-data/
+# Database & Data（演示数据随仓库分发, 供评审/联调直接使用）
 
 # ChromaDB vector store
 chroma_db/
