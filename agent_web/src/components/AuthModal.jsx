@@ -29,46 +29,46 @@ export default function AuthModal({ onClose, onAuthed }) {
 
   return (
     <div onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000,
-               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 1300,
+                 display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div onClick={e => e.stopPropagation()}
-        style={{ background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 380, padding: '24px 28px',
-                 boxShadow: '0 12px 40px rgba(0,0,0,.4)' }}>
+        style={{ background: 'var(--bg)', borderRadius: 14, width: '100%', maxWidth: 380, padding: '24px 28px',
+                 boxShadow: '0 12px 40px rgba(0,0,0,.28)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <div style={{ fontSize: 17, fontWeight: 700 }}>{mode === 'login' ? '登录' : '注册'}</div>
-          <span onClick={onClose} style={{ cursor: 'pointer', color: 'var(--text4)', fontSize: 14 }}>✕</span>
+          <span onClick={onClose} style={{ cursor: 'pointer', color: 'var(--text-dim)', fontSize: 14 }}>✕</span>
         </div>
         <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
           {['login', 'register'].map(m => (
             <button key={m} onClick={() => { setMode(m); setError(''); }}
               style={{ flex: 1, padding: '7px 0', borderRadius: 8, cursor: 'pointer', fontSize: 13,
-                       border: mode === m ? '1px solid var(--accent-border2)' : '1px solid var(--border)',
-                       background: mode === m ? 'var(--accent-bg)' : 'var(--surface)',
-                       color: mode === m ? 'var(--accent)' : 'var(--text4)' }}>
+                       border: mode === m ? '1px solid var(--border)' : '1px solid var(--border)',
+                       background: mode === m ? 'var(--soft)' : 'transparent',
+                       color: mode === m ? 'var(--text)' : 'var(--text-dim)', fontWeight: mode === m ? 600 : 400 }}>
               {m === 'login' ? '登录' : '注册'}
             </button>
           ))}
         </div>
         <input value={username} onChange={e => setUsername(e.target.value)} placeholder="用户名"
-          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--input-border)',
-                   background: 'var(--input-bg)', color: 'var(--text)', fontSize: 14, outline: 'none',
+          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)',
+                   background: 'var(--card-bg)', color: 'var(--text)', fontSize: 14, outline: 'none',
                    marginBottom: 10, boxSizing: 'border-box' }} />
         {mode === 'register' && (
           <input value={email} onChange={e => setEmail(e.target.value)} placeholder="邮箱"
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--input-border)',
-                     background: 'var(--input-bg)', color: 'var(--text)', fontSize: 14, outline: 'none',
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)',
+                     background: 'var(--card-bg)', color: 'var(--text)', fontSize: 14, outline: 'none',
                      marginBottom: 10, boxSizing: 'border-box' }} />
         )}
         <input value={password} onChange={e => setPassword(e.target.value)} type="password"
           placeholder="密码（≥8 字符）"
           onKeyDown={e => e.key === 'Enter' && submit()}
-          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--input-border)',
-                   background: 'var(--input-bg)', color: 'var(--text)', fontSize: 14, outline: 'none',
+          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)',
+                   background: 'var(--card-bg)', color: 'var(--text)', fontSize: 14, outline: 'none',
                    marginBottom: 12, boxSizing: 'border-box' }} />
-        {error && <div style={{ color: 'var(--danger)', fontSize: 12.5, marginBottom: 10 }}>{error}</div>}
+        {error && <div style={{ color: '#d93025', fontSize: 12.5, marginBottom: 10 }}>{error}</div>}
         <button onClick={submit} disabled={busy}
           style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
-                   background: 'var(--btn-bg)', color: '#fff', fontSize: 14, opacity: busy ? 0.5 : 1 }}>
+                   background: 'var(--accent)', color: 'var(--bg)', fontSize: 14, opacity: busy ? 0.5 : 1 }}>
           {busy ? '处理中…' : (mode === 'login' ? '登录' : '注册并登录')}
         </button>
       </div>

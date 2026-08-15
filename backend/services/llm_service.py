@@ -5,6 +5,7 @@
 """
 import json
 import logging
+import os
 from typing import Optional
 
 import httpx
@@ -124,7 +125,7 @@ async def _call_deepseek(
     messages.append({"role": "user", "content": user_message})
 
     payload: dict = {
-        "model": "deepseek-chat",
+        "model": os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -138,6 +139,12 @@ async def _call_deepseek(
             resp = await client.post(
                 f"{DEEPSEEK_BASE_URL}/v1/chat/completions", json=payload, headers=headers
             )
+            # 端点不支持 response_format（如 LM Studio）→ 去掉该参数重试一次
+            if resp.status_code == 400 and "response_format" in payload:
+                payload.pop("response_format")
+                resp = await client.post(
+                    f"{DEEPSEEK_BASE_URL}/v1/chat/completions", json=payload, headers=headers
+                )
             if resp.status_code != 200:
                 logger.warning(f"DeepSeek API error {resp.status_code}: {resp.text[:300]}")
                 return None

@@ -4,6 +4,7 @@
 """
 import html as _html_lib
 import json
+import os
 import random
 import re
 import urllib.parse
@@ -18,7 +19,7 @@ from backend.config import (
 )
 
 ZHIPU_MODEL = "glm-4-flash"
-DEEPSEEK_MODEL = "deepseek-chat"
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
 
 def _llm_available():

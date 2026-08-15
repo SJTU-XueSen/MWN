@@ -6,6 +6,8 @@
 - 静态伺服 agent_web/dist（同源）
 """
 import asyncio, json
+import os
+from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,15 +17,24 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from backend.auth import AuthRequiredMiddleware, require_uid
-from backend.config import BASE_DIR, SECRET_KEY
+from backend.config import BASE_DIR, SECRET_KEY, UPLOAD_DIR
 from backend.database import models as M
-from backend.database.database import AsyncSessionLocal
+from backend.database.database import AsyncSessionLocal, init_db
 from backend.services import auth_service
 
 AGENT_APP_NAME = "镜·界·联 · 智能体"
 AGENT_DIST = BASE_DIR / "agent_web" / "dist"
 
-app = FastAPI(title=AGENT_APP_NAME, version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    os.makedirs(BASE_DIR / "data", exist_ok=True)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    await init_db()
+    yield
+
+
+app = FastAPI(title=AGENT_APP_NAME, version="1.0.0", lifespan=lifespan)
 
 # ── 中间件（与主站同构: CORS → Session → Auth）──
 app.add_middleware(AuthRequiredMiddleware)
@@ -485,6 +496,146 @@ async def agent_stream(request: Request):
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache",
                                       "X-Accel-Buffering": "no"})
+
+
+# ── 看板（真实指标 dashboard：StatCards + 图表数据源）──
+MOOD_SCORE = {  # 情绪 → 效价（-2..+2），用于情绪趋势线
+    "开心": 2, "兴奋": 2, "幸福": 2, "满足": 2, "成就感": 2, "期待": 1, "舒服": 1, "充实": 1,
+    "平静": 1, "放松": 1, "感动": 1, "温暖": 1, "一般": 0, "平淡": 0, "疲惫": -1, "没精神": -1,
+    "无聊": -1, "纠结": -1, "犹豫": -1, "迷茫": -2, "烦躁": -2, "焦虑": -2, "低落": -2, "emo": -2,
+    "有点烦": -2, "难过": -2, "紧张": -1, "压力": -2, "挫败": -2, "孤独": -2, "想家": -1,
+}
+
+
+@app.get("/api/agent/dashboard")
+async def agent_dashboard(request: Request):
+    uid = require_uid(request)
+    import json as _json
+    from collections import defaultdict
+    from sqlalchemy import select, desc, func
+    from backend.services.dashboard_service import get_dashboard_data
+
+    async with AsyncSessionLocal() as db:
+        d = await get_dashboard_data(db, uid)
+        p = d.get("persona")
+        history = (await db.execute(
+            select(M.PersonaProfile).where(M.PersonaProfile.user_id == uid)
+            .order_by(M.PersonaProfile.version))).scalars().all()
+        futures = (await db.execute(
+            select(M.FutureSelf).where(M.FutureSelf.user_id == uid)
+            .order_by(desc(M.FutureSelf.created_at)).limit(3))).scalars().all()
+        # ── 记录时间线（全量按日: date → [count, mood_score]）──
+        recs = (await db.execute(
+            select(M.DailyRecord.record_date, M.DailyRecord.mood)
+            .where(M.DailyRecord.user_id == uid))).all()
+        # ── 事件 ──
+        evs = (await db.execute(
+            select(M.LifeEvent).where(M.LifeEvent.user_id == uid)
+            .order_by(M.LifeEvent.occurred_at))).scalars().all()
+        # ── 记忆增长（按月累计）──
+        mems = (await db.execute(
+            select(M.LifeMemory.created_at).where(M.LifeMemory.user_id == uid))).scalars().all()
+        # ── agent 对话量 ──
+        chat_n = (await db.execute(
+            select(func.count()).select_from(M.AgentChatMessage)
+            .where(M.AgentChatMessage.user_id == uid))).scalar() or 0
+
+    def _persona_dict(pp):
+        if pp is None:
+            return None
+        return {"version": pp.version, "persona_type": pp.persona_type,
+                "confidence": round(pp.confidence or 0, 2),
+                "persona_summary": pp.persona_summary or "",
+                "ability": pp.ability_profile or {}, "interest": pp.interest_profile or {},
+                "value": pp.value_profile or {}, "decision": pp.decision_style or {},
+                "behavior": pp.behavior_profile or {}}
+
+    # 记录时间线（按月聚合: 数量 + 平均效价）
+    month_rec = defaultdict(lambda: [0, 0, 0])   # ym -> [n, score_sum, n_scored]
+    mood_dist = defaultdict(int)
+    for rd, mood in recs:
+        ym = rd.strftime("%Y-%m") if rd else "?"
+        month_rec[ym][0] += 1
+        if mood:
+            mood_dist[mood] += 1
+            sc = MOOD_SCORE.get((mood or "").strip())
+            if sc is not None:
+                month_rec[ym][1] += sc
+                month_rec[ym][2] += 1
+    timeline = [{"month": ym, "count": v[0],
+                 "mood": round(v[1] / v[2], 2) if v[2] else 0}
+                for ym, v in sorted(month_rec.items())]
+    mood_top = sorted(mood_dist.items(), key=lambda x: -x[1])[:10]
+
+    # 事件分布 + 时间分布
+    events_by_type = defaultdict(int)
+    events_by_month = defaultdict(int)
+    for e in evs:
+        events_by_type[e.event_type] += 1
+        if e.occurred_at:
+            events_by_month[e.occurred_at.strftime("%Y-%m")] += 1
+
+    # 记忆增长（按月累计）
+    mem_month = defaultdict(int)
+    for c in mems:
+        if c:
+            mem_month[c.strftime("%Y-%m")] += 1
+    cum, memory_growth = 0, []
+    for ym in sorted(set(mem_month) | set(events_by_month) | set(month_rec)):
+        cum += mem_month.get(ym, 0)
+        memory_growth.append({"month": ym, "total": cum, "new": mem_month.get(ym, 0)})
+
+    # 智能体使用统计（agent_stats.jsonl 为进程级全局记录）
+    agent_usage = {"requests": 0, "total_duration": 0, "tool_calls": 0,
+                   "failures": 0, "errors": 0, "durations": []}
+    try:
+        with open(BASE_DIR / "data" / "agent_stats.jsonl", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    r = _json.loads(line)
+                except Exception:
+                    continue
+                agent_usage["requests"] += 1
+                agent_usage["total_duration"] += r.get("duration_s") or 0
+                agent_usage["tool_calls"] += r.get("tools") or 0
+                agent_usage["failures"] += r.get("tool_failures") or 0
+                agent_usage["errors"] += 1 if r.get("error") else 0
+                agent_usage["durations"].append(round(r.get("duration_s") or 0, 1))
+    except Exception:
+        pass
+    dur = sorted(agent_usage.pop("durations"))
+    if dur:
+        agent_usage["avg_duration"] = round(sum(dur) / len(dur), 1)
+        agent_usage["p95_duration"] = dur[min(len(dur) - 1, int(len(dur) * 0.95))]
+
+    return {
+        "me": request.session.get("user", {}),
+        "stats": d.get("stats", {}),
+        "insight": d.get("insight", ""),
+        "interests": d.get("interests", {}),
+        "persona": _persona_dict(p),
+        "persona_history": [{"version": h.version,
+                             "confidence": round(h.confidence or 0, 2),
+                             "generated_at": h.generated_at.strftime("%Y-%m-%d") if h.generated_at else ""}
+                            for h in history],
+        "active_goals": [{"id": g.id, "title": g.title, "goal_type": g.goal_type,
+                          "importance": g.importance, "period": g.target_period or "",
+                          "status": g.status}
+                         for g in d.get("active_goals", [])],
+        "futures": [{"id": f.id, "label": f.persona_label, "path_type": f.path_type,
+                     "confidence": round(f.confidence or 0.7, 2),
+                     "target_year": f.target_year} for f in futures],
+        # ── 指标数据 ──
+        "timeline": timeline,                       # [{month, count, mood}] 按月
+        "mood_dist": mood_top,                      # [[mood, n]] top10
+        "events_by_type": dict(events_by_type),
+        "events_by_month": dict(sorted(events_by_month.items())),
+        "memory_growth": memory_growth,             # [{month, total, new}] 累计
+        "memory_total": sum(mem_month.values()),
+        "chat_messages": chat_n,
+        "agent_usage": agent_usage,
+        "competitions": [], "activities": [],
+    }
 
 
 # ── 今日镜像（主动观察: 登录后自动推送, 像 Apple Fitness 的每日摘要）──
