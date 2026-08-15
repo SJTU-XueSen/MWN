@@ -341,7 +341,7 @@ async def main():
 
         user.skill_tags = ["Python", "机器学习", "强化学习", "嵌入式", "机器人", "算法", "数学"]
         await db.commit()
-        print(f"\n完成！{USERNAME}：{llm_count + rule_count} 条日记 + {len(EVENTS)} 事件 + {len(GOALS)} 目标 + 人格/模拟/报告")
+        print(f"\n完成！{USERNAME}：{ok + failed} 条日记（LLM 成功 {ok}） + {len(EVENTS)} 事件 + {len(GOALS)} 目标 + 人格/模拟/报告")
 
 
 asyncio.run(main())

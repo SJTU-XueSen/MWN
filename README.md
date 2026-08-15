@@ -1,84 +1,78 @@
-# 镜·界·联 — 青年成长生态系统
+# 镜·界·联 · 智能体（Agent 版）
 
 > 认识自己 · 走向世界 · 与他人共同创造
+>
+> 原"三合一"主站（活动大厅/工作台/团队聊天/爬虫）已废弃，全部能力收敛到**单智能体 + 看板**。
 
-**单一后端 + 单端口**：一个 FastAPI 服务同时承载全部 API 与前端构建产物，访问 `http://127.0.0.1:5000` 即可使用整个网站。
-
----
-
-## 架构
+## 架构（单端口）
 
 ```
-浏览器 (:5000 单端口)
+浏览器 (:5021 单端口, 生产伺服 agent_web/dist)
     │
     ▼
 ┌──────────────────────────────────────────────┐
-│  backend/  FastAPI 单体后端                    │
-│  · /api/auth      注册/登录/登出（JSON + 会话） │
-│  · /api/mirror/*  记录/事件/人格/模拟/目标/报告 │
-│  · /api/*         活动/组队/任务/工作台/聊天    │
-│  · /api/activities SJTU 爬虫（6 站点 + AI 筛选）│
-│  · /api/ai-search  DeepSeek 语义活动检索        │
-│  · /uploads       团队作品/聊天图片             │
-│  · /assets + SPA   前端构建产物直接伺服         │
-└──────┬──────────────────────┬─────────────────┘
-       ▼                      ▼
-┌───────────────┐   ┌──────────────────────────┐
-│ SQLite        │   │ ChromaDB                 │
-│ data/app.db   │   │ data/chroma/             │
-│ 全部业务表     │   │ 语义记忆（user_id 过滤）  │
-└───────────────┘   └──────────────────────────┘
+│  backend/agent_app.py  智能体后端              │
+│  · /api/auth       注册/登录/登出（独立闭环）   │
+│  · /api/agent/stream   对话 SSE 流             │
+│  · /api/agent/dashboard 看板（原主站 dashboard）│
+│  · /api/agent/*    记录/历史/资料/隐私          │
+└──────┬────────────────────────┬───────────────┘
+       ▼                        ▼
+┌───────────────┐      ┌──────────────────────┐
+│ SQLite        │      │ ChromaDB 语义记忆     │
+│ data/app.db   │      │ data/chroma/         │
+└───────────────┘      └──────────────────────┘
+       ▲
+┌──────────────────────────────────────────────┐
+│  LangGraph 引擎（思考 → 工具并行 → 回答）      │
+│  20 个工具（14 检索 + 6 写入）                │
+└──────────────────────────────────────────────┘
 ```
 
-## 快速启动
+## 快速开始
 
 ```bash
-# 1. 配置 API Key（.env：DEEPSEEK_API_KEY / ZHIPU_API_KEY）
+# 1. 配置 .env（QWEN_* = agent 主通道 LLM）
 # 2. 构建前端（首次或前端改动后）
-cd web && npm install && npm run build && cd ..
+cd agent_web && npm install && npm run build && cd ..
 
-# 3. 启动后端（单 worker——调度器/Chroma/STT 均为进程内单例）
-.venv/Scripts/python.exe -m uvicorn backend.main:app --port 5000 --workers 1
+# 3. 启动（单进程单端口, uvicorn 必须 --workers 1）
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python scripts/start_all.py        # → http://localhost:5021
 
-# 4. 访问
-open http://127.0.0.1:5000
+# 开发模式: cd agent_web && npm run dev（:5174, 代理 /api → :5021）
 ```
 
-开发模式：`cd web && npm run dev`（:5173，代理 /api → :5000）。
-
-## 功能清单
+## 功能
 
 | 模块 | 说明 |
 |------|------|
-| 🪞 日常记录 | AI 分析（DeepSeek）+ 生命记忆提炼 → ChromaDB |
-| 🗺 人生事件 | 11 种类型，AI 情绪/兴趣/人格影响分析 |
-| 🪞 数字人格 | 五维画像 + 多版本追踪 + 诚实置信度 |
-| 🔮 人生模拟 | 3 条锚定真实记忆的未来路径 + 未来对话 + 人生体验 |
-| 🔭 推演人生 | 无干预式逐年推演 |
-| 📊 成长报告 | 周期内真实数据总结 |
-| 🌏 活动大厅 | 活动发布/审核/组队 + SJTU 6 站点爬虫 + AI 检索 |
-| 🤝 工作台 | AI 任务拆解/认领/审核/协作文档/信誉分 |
-| 💬 团队聊天 | 组内/团队频道 + DeepSeek 协作助手 |
-| 🎤 语音输入 | FunASR 语音转文字（可选，内置热词） |
+| 💬 智能体对话 | SSE 流式（思维链/工具卡片/打字机），单全能"镜界导师" |
+| 📝 全操作对话化 | 写日记/记事件/存感悟/建目标/刷画像/跑模拟/未来对话，说话即完成 |
+| 🔍 检索工具 | 记忆 RAG/人格/事件/日记/目标/兴趣/未来路径/报告/证据链/模拟 |
+| 🌐 联网 | web_search（Wikipedia + DuckDuckGo 背景摘要） |
+| 🪞 看板 | 原主站 dashboard 全量：当前的我/可能的我/我与世界/我和他人/我要走向哪里 |
+| 🗂 记录面板 | 日记/事件/目标 搜索·详情·删除·标注完成 |
+| 👤 用户中心 | 主题/资料/改密/记忆个性化/数据删除/注销（级联 SQLite+Chroma） |
+| 🪞 今日镜像 | 登录自动推送 7 天观察 + 每日一问 |
+
+## LLM 配置（.env）
+
+| 变量 | 说明 |
+|------|------|
+| `QWEN_API_KEY` / `QWEN_BASE_URL` / `QWEN_MODEL` | agent 主通道（OpenAI 兼容; 默认阿里云百炼） |
+| `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | 辅助通道（兜底/摘要; 支持本地 LM Studio） |
 
 ## 数据与隐私
 
-- 所有 AI 输出**锚定于用户真实数据**（SQLite + ChromaDB），绝不虚构
-- 所有查询强制 **user_id 过滤**，未登录一律 401
-- 数据可导出（设置页）、可注销（级联删除 SQLite + 向量）
-- 密码 bcrypt 哈希；会话 SameSite=Lax 7 天
+- 所有 AI 输出**锚定真实数据**，工具查不到就如实说，不编造
+- 所有查询强制 **user_id 过滤**，未登录 401，越权返回 not_found
+- 数据可删除（按类/单条/全部）、账户可注销（SQLite + 向量级联）
+- 密码 bcrypt；会话 SameSite=Lax 7 天
 
-## 目录结构
+## 已知限制（原主站功能废弃清单）
 
-```
-ai-camp/
-├── backend/           # FastAPI 单体后端
-│   ├── main.py        # 入口（中间件/静态/SPA fallback/调度器）
-│   ├── config.py      # 配置（.env）
-│   ├── auth.py        # 登录中间件（强制登录）
-│   ├── database/      # SQLAlchemy async 模型与引擎
-│   ├── routers/       # auth/mirror/hub/activities/teams/tasks/work/chat/credits
-│   └── services/      # LLM/记忆/人格/模拟/爬虫/AI筛选/AI检索/调度/STT
-├── web/               # React 18 + Vite + TS 前端
-└── data/              # SQLite + ChromaDB + uploads（自动创建）
-```
+- 活动大厅/组队/战队/工作台/团队聊天：**接口随主站移除**；`activity_search`/`team_context`/`create_task` 工具保留但数据源为空（优雅降级）
+- SJTU 6 站点爬虫与调度器：**已随主站移除**（赛事官网爬取从未实现过）
+- 语音输入（FunASR）、数据导出 JSON、人生体验/推演人生：未迁移
